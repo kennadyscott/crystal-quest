@@ -347,29 +347,41 @@
   .hero{cursor:grab}
   .hero.is-dragging{cursor:grabbing}
   .hero.zoomed .pill,.hero.zoomed .lockchip,
-  .hero.in-land{background:#0038e8}
   .hero.in-land .pill,.hero.in-land .lockchip{opacity:0;pointer-events:none}
   .hero.zoomed .drawer,.hero.zoomed .drawer-tab,.hero.zoomed .hud,
   .hero.in-land .drawer,.hero.in-land .drawer-tab,.hero.in-land .hud{opacity:0;pointer-events:none;transition:opacity .4s}
 
   .land-view{position:absolute;inset:0;z-index:40;opacity:0;pointer-events:none;transition:opacity .45s .15s}
   .land-view.open{opacity:1}
-  .lv-bg{display:none}
-  .lv-scrim{position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(ellipse at 50% 58%, transparent 42%, rgba(6,18,41,.5) 100%)}
+  .lv-bg,.lv-scrim,.lv-stage{display:none}
   .lv-content{position:absolute;inset:0;pointer-events:none}
-  .lv-stage{display:none}
-  .lv-back{
+  .lv-chrome{
     position:absolute;top:18px;left:18px;z-index:5;pointer-events:auto;
+    display:flex;align-items:stretch;gap:10px;
+  }
+  .lv-back{
     display:flex;align-items:center;gap:8px;padding:11px 20px;border-radius:15px;
     background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.7);
     box-shadow:var(--shadow-sm);font-weight:800;font-size:14px;color:var(--crystal-deep);
   }
   .lv-back:hover{background:#fff}
-  .lv-head{position:absolute;top:16px;left:0;right:0;text-align:center;color:#fff;z-index:4;pointer-events:none}
-  .lv-head .kick{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;opacity:.9;text-shadow:0 2px 10px rgba(40,20,90,.6)}
-  .lv-head h2{font-size:34px;font-weight:800;letter-spacing:-.045em;text-shadow:0 3px 16px rgba(40,20,90,.65);margin-top:2px}
-  .lv-head .sub{font-size:14px;font-weight:700;opacity:.95;text-shadow:0 2px 10px rgba(40,20,90,.6);margin-top:3px}
+  .lv-titlecard{
+    display:flex;flex-direction:column;justify-content:center;
+    background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.7);
+    border-radius:15px;padding:8px 16px 9px;box-shadow:var(--shadow-sm);min-width:160px;
+  }
+  .lv-titlecard .kick{
+    font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);line-height:1.2;
+  }
+  .lv-titlecard h2{
+    font-family:var(--font-display);font-size:18px;font-weight:800;letter-spacing:-.03em;
+    color:var(--ink);margin:1px 0 0;line-height:1.15;
+  }
+  .lv-titlecard .sub{
+    font-size:12px;font-weight:650;color:var(--ink-soft);margin-top:3px;line-height:1.3;
+    max-width:260px;
+  }
   .lv-progress{
     position:absolute;top:18px;right:18px;z-index:5;pointer-events:auto;
     display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:15px;
@@ -679,11 +691,13 @@
     <div class="lv-bg" id="lvBg"></div>
     <div class="lv-scrim"></div>
     <div class="lv-content">
-      <button class="lv-back" onclick="exitLand()">← World Map</button>
-      <div class="lv-head">
-        <div class="kick">Crystal Hills</div>
-        <h2 id="lvTitle">Land of Multiplication &amp; Division</h2>
-        <div class="sub" id="lvSub">Complete every topic to claim this land's crystal!</div>
+      <div class="lv-chrome">
+        <button class="lv-back" onclick="exitLand()">← World Map</button>
+        <div class="lv-titlecard">
+          <div class="kick" id="lvKick">Crystal Hills</div>
+          <h2 id="lvTitle">Place Value</h2>
+          <div class="sub" id="lvSub">Master the first 3 shrines to open the rest of the island.</div>
+        </div>
       </div>
       <div class="lv-progress"><span class="t" id="lvCount">5 / 6</span><span class="bar"><i id="lvBar" style="width:83%"></i></span></div>
       <div class="lv-stage" id="lvStage">

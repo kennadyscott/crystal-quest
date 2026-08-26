@@ -386,8 +386,8 @@ function exitLand(){
 function buildLandView(key){
   const L = LANDS[key];
   const flavor = (L.flavor||'').replace(/^The /,'');
-  $('#lvTitle').textContent = 'Land of ' + L.title;
-  const kick = document.querySelector('.lv-head .kick');
+  $('#lvTitle').textContent = L.title;
+  const kick = $('#lvKick');
   if(kick) kick.textContent = flavor || 'Conquer the';
   const map = $('#mapStage');
   map.querySelectorAll('.qsite').forEach(n=>n.remove());
