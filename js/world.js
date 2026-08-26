@@ -383,12 +383,6 @@ function exitLand(){
   fitMap();
 }
 
-function qsiteMark(st){
-  if(st==='done') return '<span class="mark done" aria-hidden="true">✓</span>';
-  if(st==='lock') return '<span class="mark lock" aria-hidden="true">🔒</span>';
-  return '<span class="mark gem" aria-hidden="true"></span>';
-}
-
 function buildLandView(key){
   const L = LANDS[key];
   const flavor = (L.flavor||'').replace(/^The /,'');
@@ -425,8 +419,9 @@ function buildLandView(key){
     el.style.left = xy[0]+'px';
     el.style.top = xy[1]+'px';
     el.dataset.q = q.name;
+    const kind = partLocked || st==='lock' ? 'lock' : (st==='done' ? 'done' : 'gem');
     const label = q.short || q.name;
-    el.innerHTML = `${qsiteMark(partLocked ? 'lock' : st)}<span class="copy"><span class="num">${i+1} / ${L.quests.length}</span><span class="nm">${label}</span></span>`;
+    el.innerHTML = `${pillMark(kind)}<span class="copy"><span class="fl">${label}</span><span class="nm">Shrine ${i+1} of ${L.quests.length}</span></span>`;
     el.addEventListener('click', ev => {
       ev.stopPropagation();
       if(partLocked){
