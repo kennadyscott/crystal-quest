@@ -12,7 +12,6 @@ const HUES = [
 const ACCS = ['','🎀','🧢','👑','⭐','😎'];
 
 function fitMap(){
-  if (inLand) return;
   if (typeof applyCamera==='function') applyCamera(true);
 }
 window.addEventListener('resize', fitMap);
@@ -322,86 +321,100 @@ function landClick(key, el){
   enterLand(key);
 }
 
+function landNodes(key){
+  const L = LANDS[key];
+  if(L && L.nodes && L.nodes.length) return L.nodes;
+  return NODE_XY.slice(0, (L && L.quests.length) || 0);
+}
+
 function enterLand(key){
   inLand = true; currentLandKey = key;
-  const hero = $('#hero'), stage = $('#mapStage');
-  const c = LANDS[key].center;
-  const w = hero.clientWidth, h = hero.clientHeight;
-  const Z = 2.4;
-  stage.classList.add('zooming');
-  hero.classList.add('zoomed');
-  requestAnimationFrame(()=>{
-    stage.style.top = '0px';
-    stage.style.transform = `translate(${w/2 - c[0]*Z}px, ${h/2 - c[1]*Z}px) scale(${Z})`;
-  });
-  const ZB = 2.8;
-  const bg = $('#lvBg');
-  bg.style.backgroundImage = "url('assets/map.jpg?v=4')";
-  bg.style.backgroundSize = (1014*ZB) + 'px auto';
-  bg.style.backgroundPosition = `${w/2 - c[0]*ZB}px ${h*0.5 - (c[1]-70)*ZB}px`;
+  const hero = $('#hero');
+  if(hero) hero.classList.add('in-land');
+  const L = LANDS[key];
+  const nodes = landNodes(key);
+  let idx = L.quests.findIndex(q => questStatus(q.name)!=='done');
+  if(idx < 0) idx = Math.max(0, L.quests.length - 1);
+  const node = nodes[idx] || L.center;
+  if(typeof walker!=='undefined'){
+    walker.x = node[0];
+    walker.y = node[1];
+    walker.moving = false;
+    if(typeof placeWalker==='function') placeWalker();
+  }
+  if(typeof camMode!=='undefined'){
+    camMode = 'land';
+    mapCam.x = node[0];
+    mapCam.y = node[1];
+    applyCamera(false);
+  }
   buildLandView(key);
-  setTimeout(()=>$('#landView').classList.add('open'), 480);
+  $('#landView').classList.add('open');
 }
 
 function exitLand(){
   $('#landView').classList.remove('open');
-  const hero = $('#hero'), stage = $('#mapStage');
-  hero.classList.remove('zoomed');
+  const hero = $('#hero');
+  if(hero) hero.classList.remove('in-land','zoomed');
+  document.querySelectorAll('.qsite').forEach(n=>n.remove());
   inLand = false; currentLandKey = null;
+  if(typeof camMode!=='undefined'){
+    camMode = 'follow';
+    if(typeof walker!=='undefined'){
+      mapCam.x = walker.x;
+      mapCam.y = walker.y;
+    }
+  }
   fitMap();
-  setTimeout(()=>stage.classList.remove('zooming'), 800);
+}
+
+function qsiteMark(st){
+  if(st==='done') return '<span class="mark done" aria-hidden="true">✓</span>';
+  if(st==='lock') return '<span class="mark lock" aria-hidden="true">🔒</span>';
+  return '<span class="mark gem" aria-hidden="true"></span>';
 }
 
 function buildLandView(key){
   const L = LANDS[key];
-  $('#lvTitle').innerHTML = 'Land of ' + L.title;
-  const stage = $('#lvStage');
-  stage.querySelectorAll('.tnode,.buddy-wrap').forEach(n=>n.remove());
+  const flavor = (L.flavor||'').replace(/^The /,'');
+  $('#lvTitle').textContent = 'Land of ' + L.title;
+  const kick = document.querySelector('.lv-head .kick');
+  if(kick) kick.textContent = flavor || 'Conquer the';
+  const map = $('#mapStage');
+  map.querySelectorAll('.qsite').forEach(n=>n.remove());
 
   const stats = landQuestStats(key);
   const allDone = stats.allDone;
-  let curIdx = L.quests.findIndex(q => {
-    const st = questStatus(q.name);
-    return st!=='done';
-  });
   $('#lvCount').textContent = stats.done + ' / ' + stats.total;
   $('#lvBar').style.width = Math.round(stats.done/stats.total*100) + '%';
-  $('#lvSub').textContent = allDone ? 'You conquered this land — every topic mastered!' :
-    "Complete every topic to claim this land's crystal!";
+  $('#lvSub').textContent = allDone
+    ? 'You conquered this land — every side-quest mastered!'
+    : 'Conquer every side-quest to claim this land.';
   $('#lvBanner').style.display = allDone ? 'block' : 'none';
 
+  const nodes = landNodes(key);
   L.quests.forEach((q,i)=>{
     let st = questStatus(q.name);
     if(isAssigned(q.name, key) && st==='lock') st = 'prog';
-    const [x,y] = NODE_XY[i];
-    const final = i === L.quests.length-1;
-    const cls = st==='prog' ? 'cur' : st;
-    const node = document.createElement('div');
-    node.className = `tnode ${cls}${final?' final':''}`;
-    node.style.left = (x/10)+'%'; node.style.top = (y/5.6)+'%';
-    const bubContent = final
-      ? `<img src="assets/gem-big.png" alt=""/><span class="mini">${st==='done'?'👑':(st==='lock'?'🔒':'⚔️')}</span>`
-      : (st==='done' ? '✓' : `${q.icon}${st==='lock'?'<span class="mini">🔒</span>':''}`);
-    node.innerHTML = `<div class="bub">${bubContent}</div><div class="lbl">${i+1}. ${q.name}</div>`;
-    node.onclick = ()=>{
+    const xy = nodes[i] || L.center;
+    const el = document.createElement('div');
+    el.className = 'qsite ' + (st==='prog' ? 'cur' : st);
+    el.style.left = xy[0]+'px';
+    el.style.top = xy[1]+'px';
+    el.dataset.q = q.name;
+    const label = q.short || q.name;
+    el.innerHTML = `${qsiteMark(st)}<span class="copy"><span class="num">${i+1} / ${L.quests.length}</span><span class="nm">${label}</span></span>`;
+    el.addEventListener('click', ev => {
+      ev.stopPropagation();
       if(st==='lock' && !isAssigned(q.name, key)){
-        toast('🔒','Conquer the topics before it first!');
+        toast('🔒','Conquer the side-quests before it first!');
         return;
       }
       openQuest(q.name, L.title, key, 0, st);
-    };
-    stage.appendChild(node);
+    });
+    map.appendChild(el);
   });
-
-  const bIdx = curIdx === -1 ? L.quests.length-1 : curIdx;
-  const [bx,by] = NODE_XY[bIdx];
-  const buddy = document.createElement('div');
-  buddy.className = 'buddy-wrap';
-  buddy.style.left = (bx/10)+'%'; buddy.style.top = (by/5.6)+'%';
-  const aid = (avatar && avatar.id) || 'mai';
-  const who = (save && save.studentName) || 'You';
-  buddy.innerHTML = `<span class="av-wrap"><img src="${avatarSrc(aid)}" alt=""/></span><br><span class="tag">${who}</span>`;
-  stage.appendChild(buddy);
+  if(typeof placeWalker==='function') placeWalker();
 }
 
 function openQuest(title, land, key, curStep, status){

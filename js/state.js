@@ -95,7 +95,7 @@ function newAdventureSave(studentName, avatar){
 function mayaShowcaseSave(){
   const quests = emptyQuestLog();
   const done = [
-    'Read & Write Numbers','Compare Numbers','Rounding','Expanded Form','Number Patterns','Place Value Boss',
+    'Place Value','Represent Numbers','Compare and Order Whole Numbers','Rounding Numbers','Counting Money',
     'Equal Groups','Arrays','Facts Fluency','Multiply by 10s'
   ];
   done.forEach(n => { if(quests[n]){ quests[n].status='done'; quests[n].stars=3; quests[n].xp=40; } });
@@ -123,13 +123,30 @@ function persist(){
   try{ if(save && save.avatar) localStorage.setItem(AVATAR_KEY, JSON.stringify(save.avatar)); }catch(e){}
 }
 
+function migratePlaceQuests(s){
+  if(!s || !s.quests) return s;
+  if(s.quests['Represent Numbers'] || s.quests['Counting Money']) return s;
+  const old = ['Read & Write Numbers','Compare Numbers','Rounding','Expanded Form','Number Patterns','Place Value Boss'];
+  if(!old.some(n => s.quests[n])) return s;
+  const conquered = s.lands && s.lands.place==='conquered';
+  const open = s.lands && s.lands.place==='open';
+  old.forEach(n => { delete s.quests[n]; });
+  LANDS.place.quests.forEach(q => {
+    s.quests[q.name] = { status: conquered ? 'done' : 'lock', stars:0, xp:0, bestPost:0 };
+  });
+  if(open && !conquered){
+    s.quests[LANDS.place.quests[0].name].status = 'prog';
+  }
+  return s;
+}
+
 function loadSave(){
   try{
     const raw = localStorage.getItem(SAVE_KEY);
     if(!raw) return null;
     const s = JSON.parse(raw);
     if(!s || s.version!==1 || !s.quests) return null;
-    return s;
+    return migratePlaceQuests(s);
   }catch(e){ return null; }
 }
 

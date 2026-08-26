@@ -105,6 +105,7 @@
   }
   .explore-hint.show{opacity:1}
   .explore-hint b{color:var(--magenta)}
+  .hero.in-land .explore-hint{z-index:45;bottom:28px}
 
   .av-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 4px}
   .av-pick{
@@ -340,16 +341,43 @@
   /* ============ LAND ZOOM + LAND VIEW ============ */
   .hero{cursor:grab}
   .hero.is-dragging{cursor:grabbing}
-  .hero.zoomed .pill,.hero.zoomed .lockchip{opacity:0;pointer-events:none}
-  .hero.zoomed .drawer,.hero.zoomed .drawer-tab,.hero.zoomed .hud{opacity:0;pointer-events:none;transition:opacity .4s}
+  .hero.zoomed .pill,.hero.zoomed .lockchip,
+  .hero.in-land .pill,.hero.in-land .lockchip{opacity:0;pointer-events:none}
+  .hero.zoomed .drawer,.hero.zoomed .drawer-tab,.hero.zoomed .hud,
+  .hero.in-land .drawer,.hero.in-land .drawer-tab,.hero.in-land .hud{opacity:0;pointer-events:none;transition:opacity .4s}
+
+  .qsite{
+    position:absolute;transform:translate(-50%,-108%);z-index:6;
+    display:flex;align-items:center;gap:7px;padding:6px 10px 6px 8px;max-width:148px;
+    background:linear-gradient(180deg,rgba(12,22,48,.78),rgba(6,18,41,.9));
+    border:1px solid rgba(255,255,255,.22);border-radius:11px;color:#fff;cursor:pointer;
+    box-shadow:0 8px 18px rgba(6,18,41,.4);backdrop-filter:blur(8px);
+    pointer-events:auto;
+  }
+  .qsite .mark{width:16px;height:16px;flex:none;display:grid;place-items:center;font-size:11px}
+  .qsite .mark.gem{
+    width:11px;height:11px;margin:0 2px;
+    background:linear-gradient(135deg,#ff7ae8,#8b35f6 55%,#6d35ff);
+    transform:rotate(45deg);border-radius:2px;box-shadow:0 0 8px rgba(236,24,200,.55);
+  }
+  .qsite .mark.done{width:15px;height:15px;border-radius:50%;background:var(--emerald);color:#fff;font-size:9px;font-weight:800}
+  .qsite .copy{display:flex;flex-direction:column;gap:1px;min-width:0;text-align:left}
+  .qsite .num{font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,236,255,.7)}
+  .qsite .nm{font-family:var(--font-display);font-weight:800;font-size:12px;letter-spacing:-.02em;line-height:1.15;white-space:nowrap}
+  .qsite.lock{opacity:.72}
+  .qsite.cur{border-color:rgba(236,24,200,.75);box-shadow:0 0 0 1px rgba(236,24,200,.3),0 8px 20px rgba(236,24,200,.22)}
+  .qsite.done{border-color:rgba(20,180,126,.5)}
+  .qsite:hover{transform:translate(-50%,-118%)}
 
   .land-view{position:absolute;inset:0;z-index:40;opacity:0;pointer-events:none;transition:opacity .45s .15s}
-  .land-view.open{opacity:1;pointer-events:auto}
-  .lv-bg{position:absolute;inset:-40px;background-repeat:no-repeat;filter:blur(24px) saturate(1.12) brightness(1.03)}
-  .lv-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(36,20,70,.32),rgba(60,30,110,.12) 30%,rgba(36,20,70,.25))}
-  .lv-content{position:absolute;inset:0}
+  .land-view.open{opacity:1}
+  .lv-bg{display:none}
+  .lv-scrim{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 58%, transparent 42%, rgba(6,18,41,.5) 100%)}
+  .lv-content{position:absolute;inset:0;pointer-events:none}
+  .lv-stage{display:none}
   .lv-back{
-    position:absolute;top:18px;left:18px;z-index:5;
+    position:absolute;top:18px;left:18px;z-index:5;pointer-events:auto;
     display:flex;align-items:center;gap:8px;padding:11px 20px;border-radius:15px;
     background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.7);
     box-shadow:var(--shadow-sm);font-weight:800;font-size:14px;color:var(--crystal-deep);
@@ -360,7 +388,7 @@
   .lv-head h2{font-size:34px;font-weight:800;letter-spacing:-.045em;text-shadow:0 3px 16px rgba(40,20,90,.65);margin-top:2px}
   .lv-head .sub{font-size:14px;font-weight:700;opacity:.95;text-shadow:0 2px 10px rgba(40,20,90,.6);margin-top:3px}
   .lv-progress{
-    position:absolute;top:18px;right:18px;z-index:5;
+    position:absolute;top:18px;right:18px;z-index:5;pointer-events:auto;
     display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:15px;
     background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.7);box-shadow:var(--shadow-sm);
   }
@@ -670,7 +698,7 @@
     <div class="lv-content">
       <button class="lv-back" onclick="exitLand()">← World Map</button>
       <div class="lv-head">
-        <div class="kick">Conquer the</div>
+        <div class="kick">Crystal Hills</div>
         <h2 id="lvTitle">Land of Multiplication &amp; Division</h2>
         <div class="sub" id="lvSub">Complete every topic to claim this land's crystal!</div>
       </div>

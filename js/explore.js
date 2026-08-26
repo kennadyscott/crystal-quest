@@ -35,9 +35,16 @@ function closestOnSeg(px,py,ax,ay,bx,by){
   return { x, y, t, d:Math.hypot(px-x, py-y) };
 }
 
+function activePaths(){
+  if(typeof inLand!=='undefined' && inLand && currentLandKey && LANDS[currentLandKey] && LANDS[currentLandKey].path){
+    return [LANDS[currentLandKey].path];
+  }
+  return PATHS;
+}
+
 function snapToPath(px, py){
   let best=null;
-  PATHS.forEach(poly => {
+  activePaths().forEach(poly => {
     for(let i=0;i<poly.length-1;i++){
       const a=poly[i], b=poly[i+1];
       const p=closestOnSeg(px,py,a[0],a[1],b[0],b[1]);
@@ -91,7 +98,6 @@ let suppressClick = false;
 const held = {};
 
 function exploreBusy(){
-  if(inLand) return true;
   const title = $('#titleScreen');
   if(title && !title.classList.contains('gone')) return true;
   if(document.querySelector('.modal-scrim.open')) return true;
@@ -107,6 +113,9 @@ function targetScale(){
   if(!hero) return 1;
   if(camMode==='overview'){
     return Math.min(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 0.96;
+  }
+  if(camMode==='land'){
+    return Math.max(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 1.85;
   }
   return Math.max(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 1.08;
 }
@@ -129,7 +138,7 @@ function clampCam(){
 
 function applyCamera(instant){
   const hero = $('#hero'), stage = $('#mapStage');
-  if(!hero || !stage || inLand) return;
+  if(!hero || !stage) return;
   mapCam.scale = targetScale();
   clampCam();
   const s = mapCam.scale;
@@ -151,7 +160,7 @@ function applyCamera(instant){
 }
 
 function beginFollow(){
-  if(camMode==='follow') return;
+  if(camMode==='follow' || camMode==='land') return;
   camMode = 'follow';
   mapCam.x = walker.x;
   mapCam.y = walker.y;
@@ -174,6 +183,7 @@ function placeWalker(){
 }
 
 function nearestLand(){
+  if(inLand) return null;
   let best = null, bestD = 78;
   LAND_KEYS.forEach(key => {
     const c = LANDS[key].center;
@@ -183,9 +193,35 @@ function nearestLand(){
   return best;
 }
 
+function nearestQuest(){
+  if(!inLand || !currentLandKey) return null;
+  const L = LANDS[currentLandKey];
+  const nodes = (typeof landNodes==='function') ? landNodes(currentLandKey) : (L.nodes||[]);
+  let best = null, bestD = 42;
+  L.quests.forEach((q,i)=>{
+    const xy = nodes[i]; if(!xy) return;
+    const d = Math.hypot(walker.x - xy[0], walker.y - xy[1]);
+    if(d < bestD){ bestD = d; best = { q, i, st: questStatus(q.name) }; }
+  });
+  return best;
+}
+
 function updateExploreHint(){
   const hint = $('#exploreHint'); if(!hint) return;
   if(exploreBusy()){ hint.classList.remove('show'); return; }
+  if(inLand){
+    const at = nearestQuest();
+    if(at){
+      hint.innerHTML = at.st==='lock'
+        ? `🔒 Conquer the earlier side-quests first`
+        : `↵  ${at.st==='done'?'Replay':'Play'} <b>${at.q.name}</b>`;
+      hint.classList.add('show');
+    } else {
+      hint.innerHTML = 'Walk to a side-quest · <b>World Map</b> to leave';
+      hint.classList.add('show');
+    }
+    return;
+  }
   const key = nearestLand();
   if(key){
     const L = LANDS[key];
@@ -206,6 +242,16 @@ function updateExploreHint(){
 }
 
 function tryEnterHere(){
+  if(inLand){
+    const at = nearestQuest();
+    if(!at) return;
+    if(at.st==='lock' && !isAssigned(at.q.name, currentLandKey)){
+      toast('🔒','Conquer the side-quests before it first!');
+      return;
+    }
+    openQuest(at.q.name, LANDS[currentLandKey].title, currentLandKey, 0, at.st);
+    return;
+  }
   const key = nearestLand();
   if(!key) return;
   const pill = document.querySelector(`.pill[data-key="${key}"]`);
@@ -297,7 +343,7 @@ function initExplore(){
 
   hero.addEventListener('pointerdown', e => {
     if(exploreBusy()) return;
-    if(e.target.closest('.pill,.lockchip,.drawer,.hud,.drawer-tab,.explore-hint')) return;
+    if(e.target.closest('.pill,.lockchip,.drawer,.hud,.drawer-tab,.explore-hint,.qsite,.lv-back,.lv-progress')) return;
     exploreDrag = { x:e.clientX, y:e.clientY, camX:mapCam.x, camY:mapCam.y, moved:false, id:e.pointerId };
     hero.classList.add('is-dragging');
     try{ hero.setPointerCapture(e.pointerId); }catch(_){}

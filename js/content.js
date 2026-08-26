@@ -8,19 +8,22 @@ const LANDS = {
     unlocks:['mult','frac'], requires:null,
     flavor:'The Crystal Hills',
     buddy:'Every digit has a home!',
+    path:[[215,400],[200,355],[188,310],[176,270],[168,230]],
+    nodes:[[215,400],[200,355],[188,310],[176,270],[168,230]],
     quests:[
-      {name:'Read & Write Numbers', icon:'🔢'},
-      {name:'Compare Numbers', icon:'⚖️'},
-      {name:'Rounding', icon:'🎯'},
-      {name:'Expanded Form', icon:'➕'},
-      {name:'Number Patterns', icon:'🔁'},
-      {name:'Place Value Boss', icon:'👑'}
+      {name:'Place Value', icon:'🔢', short:'Place Value'},
+      {name:'Represent Numbers', icon:'✍️', short:'Represent'},
+      {name:'Compare and Order Whole Numbers', icon:'⚖️', short:'Compare & Order'},
+      {name:'Rounding Numbers', icon:'🎯', short:'Rounding'},
+      {name:'Counting Money', icon:'🪙', short:'Counting Money'}
     ]},
   mult:{ title:'Multiplication & Division', center:[549,300],
     pill:[549,345], lockchip:null,
     unlocks:['dec'], requires:'place',
     flavor:'Purple Peak',
     buddy:'Equal groups make magic!',
+    path:[[510,470],[545,440],[560,390],[552,340],[548,300],[560,255]],
+    nodes:[[510,470],[545,440],[560,390],[552,340],[548,300],[560,255]],
     quests:[
       {name:'Equal Groups', icon:'👥'},
       {name:'Arrays', icon:'⠿'},
@@ -34,6 +37,8 @@ const LANDS = {
     unlocks:[], requires:'mult',
     flavor:'The Ice Spires',
     buddy:'The dot is a tiny doorway!',
+    path:[[880,300],[900,275],[860,265],[850,250]],
+    nodes:[[880,300],[890,288],[900,275],[880,270],[860,265],[850,250]],
     quests:[
       {name:'Tenths & Hundredths', icon:'🔢'},
       {name:'Compare Decimals', icon:'⚖️'},
@@ -47,6 +52,8 @@ const LANDS = {
     unlocks:['geo'], requires:'place',
     flavor:'Sandy Cove',
     buddy:'Fair shares, happy dragons!',
+    path:[[184,630],[155,600],[165,570],[190,600],[200,645]],
+    nodes:[[184,630],[155,600],[165,570],[190,600],[200,645],[184,617]],
     quests:[
       {name:'Unit Fractions', icon:'🍕'},
       {name:'Comparing Fractions', icon:'⚖️'},
@@ -60,6 +67,8 @@ const LANDS = {
     unlocks:['data'], requires:'frac',
     flavor:'The Stone Ruins',
     buddy:'Shapes hide in the ruins!',
+    path:[[490,705],[520,670],[500,640],[470,660]],
+    nodes:[[490,705],[520,670],[500,640],[470,660],[487,698],[520,700]],
     quests:[
       {name:'Shapes', icon:'🔺'},
       {name:'Quadrilaterals', icon:'▭'},
@@ -73,6 +82,8 @@ const LANDS = {
     unlocks:[], requires:'geo',
     flavor:'Whisperwood Keep',
     buddy:'Charts tell secret stories!',
+    path:[[855,585],[860,545],[845,520]],
+    nodes:[[855,585],[858,565],[860,545],[852,532],[845,520],[853,500]],
     quests:[
       {name:'Picture Graphs', icon:'🖼️'},
       {name:'Bar Graphs', icon:'📊'},
@@ -116,56 +127,89 @@ function sortGame(bins, items, intro){
 const QUEST_CONTENT = {
 
   /* ===================== PLACE VALUE ===================== */
-  'Read & Write Numbers': {
+  'Place Value': {
     land:'place',
     pre:[
-      {q:'How do you write 305 in words?', a:['three hundred five','thirty-five','three hundred fifty','three thousand five'], c:0},
-      {q:'What number is four hundred twenty?', a:['402','420','42','240'], c:1},
-      {q:'In 582, the 8 is in the ___ place.', a:['ones','tens','hundreds','thousands'], c:1}
+      {q:'In 582, the 8 is in the ___ place.', a:['ones','tens','hundreds','thousands'], c:1},
+      {q:'The 4 in 4,215 is worth…', a:['4','40','400','4,000'], c:3},
+      {q:'Which digit is in the hundreds place of 7,306?', a:['7','3','0','6'], c:1}
     ],
     lesson: lessonHTML(
-      'Every digit has a PLACE',
-      'A number is a team of digits. Each teammate stands in a place with a secret value.',
-      visGroups(['Hundreds<br><b>5</b> → 500','Tens<br><b>8</b> → 80','Ones<br><b>2</b> → 2']),
-      '582 = five hundred eighty-two'
+      'Every digit has a home',
+      'A number is a team of digits. Each teammate stands in a place — ones, tens, hundreds, thousands — and that place gives it its value.',
+      visGroups(['Thousands<br><b>4</b> → 4,000','Hundreds<br><b>2</b> → 200','Tens<br><b>1</b> → 10','Ones<br><b>5</b> → 5']),
+      '4,215 = 4 thousands + 2 hundreds + 1 ten + 5 ones'
     ),
     practice:[
-      {q:'Write 647 in words.', a:['six hundred forty-seven','six hundred fourteen-seven','sixty-four seven','six hundred seventy-four'], c:0, hint:'Say the hundreds, then the tens-and-ones together: six hundred… forty-seven.'},
-      {q:'What number is two hundred nine?', a:['29','290','209','902'], c:2, hint:'Two hundred + nine ones. No tens, so a 0 sits in the tens place.'},
-      {q:'The 3 in 431 is worth…', a:['3','30','300','13'], c:1, hint:'3 is in the tens place → 3 tens → 30.'}
+      {q:'The 6 in 365 is worth…', a:['6','60','600','16'], c:1, hint:'6 sits in the tens place → 6 tens → 60.'},
+      {q:'In 9,040, which place is the 0 next to the 9?', a:['ones','tens','hundreds','thousands'], c:2, hint:'9 is thousands. The next house to the right is hundreds.'},
+      {q:'What is the thousands digit in 8,152?', a:['8','1','5','2'], c:0, hint:'The first digit of a four-digit number is thousands.'}
     ],
     game: smash([
-      {q:'seventy', c:70, opts:[17,70,700,7]},
-      {q:'four hundred two', c:402, opts:[42,420,402,240]},
-      {q:'215 in words starts with…', c:'two hundred', opts:['two hundred','twenty','two thousand','fifteen']},
+      {q:'Tens digit in 368', c:6, opts:[3,6,8,36]},
+      {q:'The 5 in 5,102 is worth', c:5000, opts:[5,50,500,5000]},
+      {q:'Hundreds place of 2,470', c:4, opts:[2,4,7,0]},
       {q:'9 tens + 4 ones', c:94, opts:[49,94,904,19]},
-      {q:'The tens digit in 368', c:6, opts:[3,6,8,36]},
-      {q:'one hundred eleven', c:111, opts:[101,111,110,11]}
-    ], 45, 'Smash the crystal that matches the number or words!'),
+      {q:'Ones digit in 780', c:0, opts:[7,8,0,80]},
+      {q:'The 1 in 1,999 is worth', c:1000, opts:[1,10,100,1000]}
+    ], 45, 'Smash the crystal that matches the place or value!'),
     post:[
-      {q:'How do you write 540 in words?', a:['five hundred four','five hundred forty','fifty-four','five hundred fourteen'], c:1},
-      {q:'What number is three hundred sixteen?', a:['360','306','316','136'], c:2},
-      {q:'In 704, which place is 0?', a:['ones','tens','hundreds','thousands'], c:1}
+      {q:'In 704, which place is 0?', a:['ones','tens','hundreds','thousands'], c:1},
+      {q:'The 2 in 2,860 is worth…', a:['2','20','200','2,000'], c:3},
+      {q:'Hundreds digit of 3,519?', a:['3','5','1','9'], c:1}
     ]
   },
 
-  'Compare Numbers': {
+  'Represent Numbers': {
+    land:'place',
+    pre:[
+      {q:'How do you write 305 in words?', a:['three hundred five','thirty-five','three hundred fifty','three thousand five'], c:0},
+      {q:'326 in expanded form is…', a:['300+20+6','300+26','32+6','3+2+6'], c:0},
+      {q:'What number is four hundred twenty?', a:['402','420','42','240'], c:1}
+    ],
+    lesson: lessonHTML(
+      'Same number, three outfits',
+      'Every number can dress three ways: standard form (420), word form (four hundred twenty), and expanded form (400 + 20). They are the same amount of crystal.',
+      visGroups(['Standard<br><b>708</b>','Word<br><b>seven hundred eight</b>','Expanded<br><b>700 + 8</b>']),
+      '708 = seven hundred eight = 700 + 8'
+    ),
+    practice:[
+      {q:'Write 647 in words.', a:['six hundred forty-seven','six hundred fourteen-seven','sixty-four seven','six hundred seventy-four'], c:0, hint:'Say the hundreds, then the tens-and-ones: six hundred… forty-seven.'},
+      {q:'Write 591 in expanded form.', a:['500+90+1','500+91','59+1','5+9+1'], c:0, hint:'5 hundreds + 9 tens + 1 one.'},
+      {q:'Which is two hundred nine?', a:['29','290','209','902'], c:2, hint:'Two hundred + nine ones. A 0 holds the tens place.'}
+    ],
+    game: smash([
+      {q:'seventy', c:70, opts:[17,70,700,7]},
+      {q:'500+20+7', c:527, opts:[527,572,257,5207]},
+      {q:'four hundred two', c:402, opts:[42,420,402,240]},
+      {q:'Expanded 840', c:'800+40', opts:['800+40','80+40','800+4','8+4+0']},
+      {q:'one hundred eleven', c:111, opts:[101,111,110,11]},
+      {q:'300+9', c:309, opts:[39,309,390,3009]}
+    ], 45, 'Match the form — smash the crystal that is the same number!'),
+    post:[
+      {q:'How do you write 540 in words?', a:['five hundred four','five hundred forty','fifty-four','five hundred fourteen'], c:1},
+      {q:'418 in expanded form?', a:['400+18','400+10+8','40+18','4+1+8'], c:1},
+      {q:'Which is 270 expanded?', a:['200+70','200+7','20+70','2+7+0'], c:0}
+    ]
+  },
+
+  'Compare and Order Whole Numbers': {
     land:'place',
     pre:[
       {q:'Which is greater?', a:['312','321','231','213'], c:1},
       {q:'412 ○ 409', a:['>','<','=','+'], c:0},
-      {q:'Which is the smallest?', a:['508','580','850','805'], c:0}
+      {q:'Order least to greatest: 85, 58, 805', a:['58, 85, 805','85, 58, 805','805, 85, 58','58, 805, 85'], c:0}
     ],
     lesson: lessonHTML(
       'Line them up and look LEFT',
-      'To compare, start at the biggest place (hundreds). The first different digit tells you who wins.',
+      'To compare, start at the biggest place. The first digit that is different tells you who is greater. To order, compare that way over and over.',
       visGroups(['512<br>hundreds: <b>5</b>','498<br>hundreds: <b>4</b>']),
       '512 > 498 because 5 hundreds beat 4 hundreds'
     ),
     practice:[
-      {q:'673 ○ 637', a:['>','<','=','×'], c:0, hint:'Hundreds are the same (6). Tens: 7 vs 3. 7 tens is more.'},
+      {q:'673 ○ 637', a:['>','<','=','×'], c:0, hint:'Hundreds match (6). Tens: 7 vs 3. 7 tens is more.'},
       {q:'Which is least?', a:['244','424','442','224'], c:3, hint:'Smallest hundreds first. 224 has only 2 hundreds.'},
-      {q:'199 ○ 201', a:['>','<','=','+'], c:1, hint:'Look at hundreds: 1 vs 2. 201 has more hundreds.'}
+      {q:'Least to greatest: 199, 201, 190', a:['190, 199, 201','199, 190, 201','201, 199, 190','190, 201, 199'], c:0, hint:'All have 1 hundred. Tens: 9, 0, 9 → 190 is smallest, then 199, then 201.'}
     ],
     game: sortGame(
       [{id:'gt', label:'500 or more', color:'#f0148f'}, {id:'lt', label:'Less than 500', color:'#5b21b6'}],
@@ -179,140 +223,74 @@ const QUEST_CONTENT = {
     post:[
       {q:'856 ○ 865', a:['>','<','=','+'], c:1},
       {q:'Which is greatest?', a:['707','770','077','700'], c:1},
-      {q:'430 ○ 403', a:['>','<','=','+'], c:0}
+      {q:'Least to greatest: 430, 403, 340', a:['340, 403, 430','403, 340, 430','430, 403, 340','340, 430, 403'], c:0}
     ]
   },
 
-  'Rounding': {
+  'Rounding Numbers': {
     land:'place',
     pre:[
       {q:'Round 47 to the nearest ten.', a:['40','47','50','30'], c:2},
       {q:'Round 32 to the nearest ten.', a:['30','40','35','20'], c:0},
-      {q:'Round 85 to the nearest ten.', a:['80','90','85','70'], c:1}
+      {q:'Round 250 to the nearest hundred.', a:['200','300','250','100'], c:1}
     ],
     lesson: lessonHTML(
       '5 or more, climb the floor!',
-      'Find the tens house the number lives between. Peek at the ones digit. If it is 5, 6, 7, 8, or 9 — round UP. If it is 0, 1, 2, 3, or 4 — stay down.',
+      'Find the place you are rounding to. Peek at the digit one house to the RIGHT. If it is 5, 6, 7, 8, or 9 — round UP. If it is 0, 1, 2, 3, or 4 — stay down.',
       kws(['0–4 stay','5–9 climb']),
-      '47 → ones is 7 → climb → <b>50</b>'
+      '47 → ones is 7 → climb → <b>50</b> · 250 → tens is 5 → climb → <b>300</b>'
     ),
     practice:[
       {q:'Round 63 to the nearest ten.', a:['60','70','65','50'], c:0, hint:'Ones digit is 3 (less than 5) so stay at 60.'},
       {q:'Round 75 to the nearest ten.', a:['70','80','75','65'], c:1, hint:'5 on the door means climb: 75 → 80.'},
-      {q:'Round 19 to the nearest ten.', a:['10','20','9','30'], c:1, hint:'Ones is 9 → climb from 10 to 20.'}
+      {q:'Round 348 to the nearest hundred.', a:['300','350','400','340'], c:0, hint:'Look at the tens digit: 4. 4 is less than 5, so stay at 300.'}
     ],
     game: smash([
-      {q:'Round 24', c:20, opts:[20,30,24,10]},
-      {q:'Round 88', c:90, opts:[80,90,88,100]},
-      {q:'Round 35', c:40, opts:[30,40,35,50]},
-      {q:'Round 61', c:60, opts:[60,70,61,50]},
-      {q:'Round 99', c:100, opts:[90,100,99,110]},
-      {q:'Round 12', c:10, opts:[10,20,12,0]},
-      {q:'Round 55', c:60, opts:[50,60,55,70]}
-    ], 45, 'Round each number to the nearest TEN, then smash that crystal!'),
+      {q:'Round 24 to ten', c:20, opts:[20,30,24,10]},
+      {q:'Round 88 to ten', c:90, opts:[80,90,88,100]},
+      {q:'Round 35 to ten', c:40, opts:[30,40,35,50]},
+      {q:'Round 61 to ten', c:60, opts:[60,70,61,50]},
+      {q:'Round 250 to hundred', c:300, opts:[200,300,250,100]},
+      {q:'Round 812 to hundred', c:800, opts:[800,810,900,812]},
+      {q:'Round 99 to ten', c:100, opts:[90,100,99,110]}
+    ], 45, 'Round it, then smash that crystal!'),
     post:[
       {q:'Round 46 to the nearest ten.', a:['40','50','45','60'], c:1},
       {q:'Round 81 to the nearest ten.', a:['80','90','85','70'], c:0},
-      {q:'Round 250 to the nearest hundred.', a:['200','300','250','100'], c:1}
+      {q:'Round 562 to the nearest hundred.', a:['500','560','600','550'], c:2}
     ]
   },
 
-  'Expanded Form': {
+  'Counting Money': {
     land:'place',
     pre:[
-      {q:'326 in expanded form is…', a:['300+20+6','300+26','32+6','3+2+6'], c:0},
-      {q:'400+50+2 =', a:['452','425','45.2','542'], c:0},
-      {q:'Which shows 708?', a:['70+8','700+8','700+80','7+0+8'], c:1}
+      {q:'3 dimes are worth…', a:['3¢','12¢','30¢','300¢'], c:2},
+      {q:'1 quarter + 1 nickel =', a:['20¢','25¢','30¢','35¢'], c:2},
+      {q:'How many cents in $1?', a:['10','50','100','1,000'], c:2}
     ],
     lesson: lessonHTML(
-      'Stretch the number out',
-      'Expanded form writes the value of each digit, then adds them like crystal shards joining together.',
-      visGroups(['3 hundreds<br>300','2 tens<br>20','6 ones<br>6']),
-      '326 = <b>300 + 20 + 6</b>'
+      'Coins are place value in your pocket',
+      'Pennies are ones. Dimes are tens. 10 dimes make 100 cents — one dollar. Count coins by skip-counting their values, then add.',
+      visGroups(['Penny<br><b>1¢</b>','Nickel<br><b>5¢</b>','Dime<br><b>10¢</b>','Quarter<br><b>25¢</b>']),
+      '2 quarters + 1 dime + 1 nickel = 25 + 25 + 10 + 5 = <b>65¢</b>'
     ),
     practice:[
-      {q:'Write 591 in expanded form.', a:['500+90+1','500+91','59+1','5+9+1'], c:0, hint:'5 hundreds + 9 tens + 1 one.'},
-      {q:'200+30+4 =', a:['234','243','2034','2304'], c:0, hint:'Put each part in its place: 2 _ 3 _ 4.'},
-      {q:'Which is 605 expanded?', a:['60+5','600+50','600+5','6+0+5'], c:2, hint:'No tens — skip a 0 tens piece, just 600 + 5.'}
+      {q:'4 dimes and 2 pennies =', a:['6¢','42¢','24¢','402¢'], c:1, hint:'4 tens + 2 ones → 40¢ + 2¢ = 42¢.'},
+      {q:'2 quarters and 1 dime =', a:['35¢','45¢','60¢','75¢'], c:2, hint:'25 + 25 + 10 = 60¢.'},
+      {q:'Which is more money?', a:['3 dimes','1 quarter','they are equal','1 nickel'], c:0, hint:'3 dimes = 30¢. A quarter is 25¢. 30¢ is more.'}
     ],
     game: smash([
-      {q:'500+20+7', c:527, opts:[527,572,257,5207]},
-      {q:'300+9', c:309, opts:[39,309,390,3009]},
-      {q:'Expanded 840', c:'800+40', opts:['800+40','80+40','800+4','8+4+0']},
-      {q:'100+10+1', c:111, opts:[111,101,110,3]},
-      {q:'700+60', c:760, opts:[76,706,760,70060]},
-      {q:'Expanded 402', c:'400+2', opts:['400+2','40+2','400+20','4+0+2']}
-    ]),
+      {q:'5 nickels', c:'25¢', opts:['5¢','15¢','25¢','50¢']},
+      {q:'1 quarter + 2 dimes', c:'45¢', opts:['35¢','45¢','47¢','70¢']},
+      {q:'7 dimes', c:'70¢', opts:['7¢','17¢','70¢','700¢']},
+      {q:'$1 in cents', c:'100¢', opts:['10¢','50¢','100¢','1¢']},
+      {q:'3 quarters', c:'75¢', opts:['30¢','50¢','75¢','3¢']},
+      {q:'1 dime + 4 pennies', c:'14¢', opts:['5¢','14¢','40¢','41¢']}
+    ], 45, 'Count the coins, smash the matching amount!'),
     post:[
-      {q:'418 in expanded form?', a:['400+18','400+10+8','40+18','4+1+8'], c:1},
-      {q:'900+50+5 =', a:['955','9055','595','950'], c:0},
-      {q:'Which is 270?', a:['200+70','200+7','20+70','2+7+0'], c:0}
-    ]
-  },
-
-  'Number Patterns': {
-    land:'place',
-    pre:[
-      {q:'4, 8, 12, 16, ___', a:['18','20','24','32'], c:1},
-      {q:'50, 45, 40, 35, ___', a:['30','25','40','20'], c:0},
-      {q:'The rule for 3, 6, 9, 12 is…', a:['add 2','add 3','×10','subtract 3'], c:1}
-    ],
-    lesson: lessonHTML(
-      'Find the JUMP',
-      'A pattern is a number path. Look at how far it jumps each time — that jump is the rule.',
-      visGroups(['4 → 8','jump +4','8 → 12','jump +4']),
-      '4, 8, 12, 16, <b>20</b>…'
-    ),
-    practice:[
-      {q:'10, 20, 30, 40, ___', a:['45','50','60','41'], c:1, hint:'The jump is +10 each time.'},
-      {q:'21, 18, 15, 12, ___', a:['11','10','9','6'], c:2, hint:'Each jump is −3. 12 − 3 = 9.'},
-      {q:'5, 10, 20, 40, ___', a:['45','50','60','80'], c:3, hint:'This one doubles (×2) each time.'}
-    ],
-    game: smash([
-      {q:'2, 4, 6, 8, ___', c:10, opts:[9,10,12,16]},
-      {q:'100, 90, 80, ___', c:70, opts:[70,60,85,10]},
-      {q:'7, 14, 21, ___', c:28, opts:[24,27,28,35]},
-      {q:'1, 2, 4, 8, ___', c:16, opts:[10,12,16,32]},
-      {q:'25, 30, 35, ___', c:40, opts:[36,40,45,50]},
-      {q:'9, 18, 27, ___', c:36, opts:[30,33,36,45]}
-    ], 45, 'Spot the rule, smash the next number!'),
-    post:[
-      {q:'6, 12, 18, 24, ___', a:['28','30','32','36'], c:1},
-      {q:'80, 70, 60, 50, ___', a:['30','40','45','10'], c:1},
-      {q:'Rule for 4, 8, 16, 32?', a:['add 4','add 8','×2','×4'], c:2}
-    ]
-  },
-
-  'Place Value Boss': {
-    land:'place',
-    pre:[
-      {q:'Greatest number from 3, 8, 1?', a:['183','318','813','831'], c:3},
-      {q:'Round 348 to the nearest hundred.', a:['300','350','400','340'], c:2},
-      {q:'200+40+7 ○ 247', a:['>','<','='], c:2}
-    ],
-    lesson: lessonHTML(
-      'The Hill Crystal Trial',
-      'The hill crystal tests EVERY place-value skill: reading, comparing, rounding, expanding, and patterns. Breathe. You already know this.',
-      kws(['places','compare','round','expand','patterns']),
-      'Mix the skills. Trust the places.'
-    ),
-    practice:[
-      {q:'Which is six hundred four?', a:['64','640','604','460'], c:2, hint:'Six hundreds + four ones, zero tens.'},
-      {q:'Round 562 to the nearest ten.', a:['560','570','500','600'], c:0, hint:'Ones digit is 2 → stay at 560.'},
-      {q:'999 ○ 1,001 (think: more digits / more thousands)', a:['>','<','='], c:1, hint:'1,001 has a thousands place. It is bigger.'}
-    ],
-    game: smash([
-      {q:'Expanded 703', c:'700+3', opts:['700+3','70+3','700+30','7+0+3']},
-      {q:'Round 45', c:50, opts:[40,50,45,100]},
-      {q:'8, 16, 24, ___', c:32, opts:[28,30,32,40]},
-      {q:'Greatest: 617, 671, 716', c:716, opts:[617,671,716,761]},
-      {q:'four hundred forty', c:440, opts:[404,440,414,44]},
-      {q:'90+9', c:99, opts:[909,99,90,18]}
-    ], 50, 'BOSS SMASH — mixed place-value crystals!'),
-    post:[
-      {q:'What is 580 in expanded form?', a:['50+80','500+80','500+8','5+8+0'], c:1},
-      {q:'Round 250 to the nearest hundred.', a:['200','300','250','260'], c:1},
-      {q:'125, 150, 175, ___', a:['180','200','225','190'], c:1}
+      {q:'6 dimes are worth…', a:['6¢','16¢','60¢','600¢'], c:2},
+      {q:'1 quarter + 1 dime + 1 nickel =', a:['40¢','35¢','41¢','30¢'], c:0},
+      {q:'Which equals $1?', a:['4 quarters','3 quarters','8 dimes','9 nickels'], c:0}
     ]
   },
 
@@ -1324,7 +1302,7 @@ QUEST_CONTENT['Subtract Decimals'].post[2] = {q:'0.32 − 0.12 =', a:['0.20','0.
 QUEST_CONTENT['Subtract Decimals'].practice[2] = {q:'1.00 − 0.40 =', a:['0.60','1.40','0.06','1.04'], c:0};
 QUEST_CONTENT['Wholes as Fractions'].post[2] = {q:'Which equals 2?', a:['2/4','4/2','2/8','3/2'], c:1};
 QUEST_CONTENT['Partition Shapes'].game.problems[3] = {q:'2 of 4 equal parts', c:'2/4', opts:['1/4','2/4','4/2','3/4']};
-QUEST_CONTENT['Compare Numbers'].game.intro = 'Put each number in the matching bin. 500 goes with the smaller team (it is not greater than 500).';
+QUEST_CONTENT['Compare and Order Whole Numbers'].game.intro = 'Put each number in the matching bin. 500 goes with 500 or more.';
 QUEST_CONTENT['Add Decimals'].game.problems[4] = {q:'0.09 + 0.01', c:'0.10', opts:['0.10','0.010','0.9','0.08']};
 QUEST_CONTENT['Decimal Boss'].game.problems[3] = {q:'0.6 − 0.2', c:'0.4', opts:['0.4','0.8','0.04','0.62']};
 QUEST_CONTENT['Decimal Boss'].game.problems[4] = {q:'0.70 compared to 0.7', c:'=', opts:['>','<','=','+']};
@@ -1332,7 +1310,7 @@ QUEST_CONTENT['Decimal Boss'].game.problems[5] = {q:'0.09 + 0.11', c:'0.20', opt
 
 const DIAG_ITEMS = [
   { land:'place', q:'The 6 in 365 is worth…', a:['6','60','600','16'], c:1 },
-  { land:'place', q:'Round 74 to the nearest ten.', a:['70','80','74','60'], c:0 },
+  { land:'place', q:'3 dimes are worth…', a:['3¢','12¢','30¢','300¢'], c:2 },
   { land:'mult', q:'4 × 6 =', a:['10','18','24','46'], c:2 },
   { land:'mult', q:'18 ÷ 3 =', a:['5','6','8','15'], c:1 },
   { land:'dec', q:'0.4 means…', a:['4 ones','4 tenths','4 hundredths','40'], c:1 },
