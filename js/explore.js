@@ -10,7 +10,7 @@ const AVATARS = [
 ];
 function avatarSrc(id){
   const ok = AVATARS.some(a => a.id===id);
-  return 'assets/avatars/' + (ok?id:'maya') + '.png';
+  return 'assets/avatars/' + (ok?id:'maya') + '.png?v=2';
 }
 function avatarOf(id){ return AVATARS.find(a => a.id===id) || AVATARS[0]; }
 
