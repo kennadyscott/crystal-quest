@@ -10,6 +10,7 @@ const LANDS = {
     buddy:'Every digit has a home!',
     art:{ src:'assets/lands/place.jpg?v=2', w:2200, h:1086 },
     spawn:[1168,970],
+    crystal:[1100,430],
     worldGate:[215,400],
     gateAfter:3,
     pathsOpen:6,
@@ -27,11 +28,16 @@ const LANDS = {
       [[1344,598],[1354,480],[1351,350],[1344,248]]
     ],
     quests:[
-      {name:'Place Value', icon:'🔢', short:'Place Value'},
-      {name:'Represent Numbers', icon:'✍️', short:'Represent'},
-      {name:'Compare and Order Whole Numbers', icon:'⚖️', short:'Compare & Order'},
-      {name:'Rounding Numbers', icon:'🎯', short:'Rounding'},
-      {name:'Counting Money', icon:'🪙', short:'Counting Money'}
+      {name:'Place Value', icon:'🔢', short:'Place Value', place:'Value Pool',
+        blurb:'Learn what each digit is worth by the place it stands in.'},
+      {name:'Represent Numbers', icon:'✍️', short:'Represent', place:'Value Grove',
+        blurb:'Write numbers in standard form, word form, and expanded form.'},
+      {name:'Compare and Order Whole Numbers', icon:'⚖️', short:'Compare & Order', place:'Order Glen',
+        blurb:'Compare whole numbers and line them up from least to greatest.'},
+      {name:'Rounding Numbers', icon:'🎯', short:'Rounding', place:'Rounding Ruins',
+        blurb:'Round to the nearest ten or hundred using the digit next door.'},
+      {name:'Counting Money', icon:'🪙', short:'Counting Money', place:'Coin Keep',
+        blurb:'Count coins and bills — place value you can hold in your hand.'}
     ]},
   mult:{ title:'Multiplication & Division', center:[549,300],
     pill:[549,345], lockchip:null,

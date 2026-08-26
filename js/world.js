@@ -337,6 +337,7 @@ function enterLand(key){
   inLand = true; currentLandKey = key;
   const hero = $('#hero');
   if(hero) hero.classList.add('in-land');
+  document.body.classList.add('in-land');
   if(typeof applyMapArt==='function') applyMapArt();
   const nodes = landNodes(key);
   let idx = L.quests.findIndex(q => questStatus(q.name)!=='done');
@@ -363,6 +364,8 @@ function exitLand(){
   $('#landView').classList.remove('open');
   const hero = $('#hero');
   if(hero) hero.classList.remove('in-land','zoomed');
+  document.body.classList.remove('in-land');
+  closeLandPanel();
   document.querySelectorAll('.qsite').forEach(n=>n.remove());
   inLand = false; currentLandKey = null;
   if(typeof applyMapArt==='function') applyMapArt();
@@ -383,30 +386,111 @@ function exitLand(){
   fitMap();
 }
 
-function buildLandView(key){
+function shardRow(done, total){
+  let html = '';
+  for(let i=0;i<total;i++) html += i<done ? '<b></b>' : '<i></i>';
+  return html;
+}
+
+let selectedLandQuest = null;
+
+function closeLandPanel(){
+  const p = $('#landPanel');
+  if(p) p.classList.remove('open');
+  selectedLandQuest = null;
+  document.querySelectorAll('.qsite.sel').forEach(n=>n.classList.remove('sel'));
+  if(typeof applyCamera==='function') applyCamera(true);
+}
+
+function selectLandQuest(title, key){
   const L = LANDS[key];
-  const flavor = (L.flavor||'').replace(/^The /,'');
-  $('#lvTitle').textContent = L.title;
-  const kick = $('#lvKick');
-  if(kick) kick.textContent = flavor || 'Conquer the';
-  const map = $('#mapStage');
-  map.querySelectorAll('.qsite').forEach(n=>n.remove());
+  const i = L.quests.findIndex(q=>q.name===title);
+  if(i<0) return;
+  const q = L.quests[i];
+  let st = questStatus(title);
+  if(isAssigned(title, key) && st==='lock') st = 'prog';
+  const partLocked = L.gateAfter && i >= L.gateAfter && !landGateOpen(key);
+  if(partLocked){
+    toast('🔒','Master the first 3 shrines to open this part of the island.');
+    return;
+  }
+  if(st==='lock' && !isAssigned(title, key)){
+    const next = L.quests.find(x=>questStatus(x.name)!=='done') || q;
+    toast('🔒','Conquer the side-quests in order. Next: '+next.name+'.');
+    return;
+  }
+
+  selectedLandQuest = title;
+  document.querySelectorAll('.qsite').forEach(n=>n.classList.toggle('sel', n.dataset.q===title));
+
+  const panel = $('#landPanel');
+  if(!panel) return;
+  panel.classList.add('open');
+  $('#lpPlace').textContent = q.place || q.name;
+  $('#lpBlurb').textContent = q.blurb || 'Complete this side-quest to restore a crystal shard.';
+  const asg = $('#lpAsg');
+  if(asg) asg.style.display = isAssigned(title, key) ? 'flex' : 'none';
+  const asgImg = $('#lpAsgImg');
+  if(asgImg && typeof avatarSrc==='function') asgImg.src = avatarSrc((save&&save.avatar&&save.avatar.id)||'mai');
+
+  const thumb = $('#lpThumb');
+  const art = L.art;
+  const xy = landNodes(key)[i];
+  if(thumb && art && xy){
+    thumb.src = art.src;
+    const pctX = (xy[0]/art.w)*100, pctY = (xy[1]/art.h)*100;
+    thumb.style.objectFit = 'cover';
+    thumb.style.objectPosition = pctX+'% '+pctY+'%';
+    thumb.style.transform = 'scale(1.8)';
+    thumb.style.transformOrigin = pctX+'% '+pctY+'%';
+  }
+
+  const steps = ['Pre-Test','Lesson','Practice','Game','Post-Test'];
+  $('#lpSteps').innerHTML = steps.map((name,si)=>{
+    let cls = '';
+    if(st==='done') cls = 'done';
+    else if(si===0) cls = 'cur';
+    return `<div class="lp-step ${cls}"><b>${si+1}</b><span>${name}</span></div>`;
+  }).join('');
 
   const stats = landQuestStats(key);
-  const allDone = stats.allDone;
-  $('#lvCount').textContent = stats.done + ' / ' + stats.total;
-  $('#lvBar').style.width = Math.round(stats.done/stats.total*100) + '%';
-  const gated = L.gateAfter && !landGateOpen(key);
-  if(allDone){
-    $('#lvSub').textContent = 'You conquered this land — every side-quest mastered!';
-  } else if(gated){
-    $('#lvSub').textContent = 'Master the first 3 shrines to open the rest of the island.';
-  } else if(L.gateAfter){
-    $('#lvSub').textContent = 'The rest of the island is open — finish the remaining shrines.';
-  } else {
-    $('#lvSub').textContent = 'Conquer every side-quest to claim this land.';
+  const shards = $('#lpShards');
+  if(shards) shards.innerHTML = shardRow(stats.done, stats.total);
+
+  const btn = $('#lpBegin');
+  const playable = !!QUEST_CONTENT[title];
+  btn.textContent = st==='done' ? 'Review Quest' : 'Begin Quest ✦';
+  btn.onclick = ()=>{
+    if(!playable){ toast('🚀','This quest is coming soon!'); return; }
+    launchQuest(title, { review: st==='done' });
+  };
+
+  if(typeof applyCamera==='function') applyCamera(true);
+}
+
+function buildLandView(key){
+  const L = LANDS[key];
+  const nav = $('#landNav');
+  if(nav) nav.textContent = 'Land of ' + L.title;
+  const map = $('#mapStage');
+  map.querySelectorAll('.qsite,.crystal-card').forEach(n=>n.remove());
+
+  const stats = landQuestStats(key);
+  const lab = $('#landProgLabel');
+  if(lab) lab.textContent = stats.done+' of '+stats.total+' Side-Quests Complete';
+  const bar = $('#landProgBar');
+  if(bar) bar.style.width = Math.round(stats.done/stats.total*100)+'%';
+
+  if(L.crystal){
+    const card = document.createElement('div');
+    card.className = 'crystal-card';
+    card.style.left = L.crystal[0]+'px';
+    card.style.top = L.crystal[1]+'px';
+    card.innerHTML = `<div class="cc-t">Land Crystal</div>
+      <div class="cc-s">${stats.done} of ${stats.total} Shards Restored</div>
+      <div class="cc-shards">${shardRow(stats.done, stats.total)}</div>`;
+    map.appendChild(card);
   }
-  $('#lvBanner').style.display = allDone ? 'block' : 'none';
 
   const nodes = landNodes(key);
   L.quests.forEach((q,i)=>{
@@ -415,28 +499,26 @@ function buildLandView(key){
     const xy = nodes[i] || L.center;
     const partLocked = L.gateAfter && i >= L.gateAfter && !landGateOpen(key);
     const el = document.createElement('div');
-    el.className = 'qsite ' + (st==='prog' ? 'cur' : st) + (partLocked ? ' gated' : '');
+    el.className = 'qsite ' + (st==='prog' ? 'cur' : st) + (partLocked ? ' lock gated' : '');
     el.style.left = xy[0]+'px';
     el.style.top = xy[1]+'px';
     el.dataset.q = q.name;
-    const kind = partLocked || st==='lock' ? 'lock' : (st==='done' ? 'done' : 'gem');
-    const label = q.short || q.name;
-    el.innerHTML = `${pillMark(kind)}<span class="copy"><span class="fl">${label}</span><span class="nm">Shrine ${i+1} of ${L.quests.length}</span></span>`;
+    const badge = (partLocked || st==='lock') ? '🔒' : (st==='done' ? '✓' : '');
+    el.innerHTML = `<div class="shrine-ring"></div>
+      <div class="shrine-pin"><i>★</i></div>
+      ${badge ? `<div class="shrine-badge">${badge}</div>` : ''}
+      <div class="qlabel">${q.place || q.short || q.name}</div>`;
     el.addEventListener('click', ev => {
       ev.stopPropagation();
-      if(partLocked){
-        toast('🔒','Master the first 3 shrines to open this part of the island.');
-        return;
-      }
-      if(st==='lock' && !isAssigned(q.name, key)){
-        toast('🔒','Conquer the side-quests in order: next up is '+(L.quests.find(x=>questStatus(x.name)!=='done')||q).name+'.');
-        return;
-      }
-      openQuest(q.name, L.title, key, 0, st);
+      selectLandQuest(q.name, key);
     });
     map.appendChild(el);
   });
   if(typeof placeWalker==='function') placeWalker();
+
+  const current = L.quests.find(q => questStatus(q.name)==='prog') || L.quests.find(q => questStatus(q.name)!=='done') || L.quests[0];
+  if(current && questStatus(current.name)!=='lock') selectLandQuest(current.name, key);
+  else if(current && isAssigned(current.name, key)) selectLandQuest(current.name, key);
 }
 
 function openQuest(title, land, key, curStep, status){

@@ -184,7 +184,9 @@ function applyCamera(instant){
   mapCam.scale = targetScale();
   clampCam();
   const s = mapCam.scale;
-  const tx = hero.clientWidth/2 - mapCam.x * s;
+  const panel = $('#landPanel');
+  const shift = (inLand && panel && panel.classList.contains('open')) ? (panel.offsetWidth * 0.42) : 0;
+  const tx = hero.clientWidth/2 - shift - mapCam.x * s;
   const ty = hero.clientHeight/2 - mapCam.y * s;
   stage.style.top = '0px';
   stage.style.left = '0px';
@@ -291,16 +293,7 @@ function tryEnterHere(){
   if(inLand){
     const at = nearestQuest();
     if(!at) return;
-    const L = LANDS[currentLandKey];
-    if(L.gateAfter && at.i >= L.gateAfter && !landGateOpen(currentLandKey)){
-      toast('🔒','Master the first 3 shrines to open this part of the island.');
-      return;
-    }
-    if(at.st==='lock' && !isAssigned(at.q.name, currentLandKey)){
-      toast('🔒','Conquer the side-quests in order!');
-      return;
-    }
-    openQuest(at.q.name, LANDS[currentLandKey].title, currentLandKey, 0, at.st);
+    selectLandQuest(at.q.name, currentLandKey);
     return;
   }
   const key = nearestLand();
@@ -396,7 +389,7 @@ function initExplore(){
 
   hero.addEventListener('pointerdown', e => {
     if(exploreBusy()) return;
-    if(e.target.closest('.pill,.lockchip,.drawer,.hud,.drawer-tab,.explore-hint,.qsite,.lv-back,.lv-progress')) return;
+    if(e.target.closest('.pill,.lockchip,.drawer,.hud,.drawer-tab,.explore-hint,.qsite,.lv-back,.lv-progress,.land-panel')) return;
     exploreDrag = { x:e.clientX, y:e.clientY, camX:mapCam.x, camY:mapCam.y, moved:false, id:e.pointerId };
     hero.classList.add('is-dragging');
     try{ hero.setPointerCapture(e.pointerId); }catch(_){}
