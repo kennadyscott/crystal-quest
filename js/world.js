@@ -351,7 +351,7 @@ function enterLand(key){
   if(typeof camMode!=='undefined'){
     camMode = 'land';
     mapCam.x = (L.art ? L.art.w/2 : start[0]);
-    mapCam.y = (L.art ? L.art.h/2 : start[1]);
+    mapCam.y = (L.art ? L.art.h * 0.56 : start[1]);
     applyCamera(false);
   }
   buildLandView(key);

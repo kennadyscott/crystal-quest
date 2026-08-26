@@ -149,7 +149,7 @@ function targetScale(){
   }
   if(camMode==='land'){
     if(currentArt().src !== WORLD_ART.src){
-      return Math.min(hero.clientWidth / W, hero.clientHeight / H) * 0.98;
+      return Math.max(hero.clientWidth / W, hero.clientHeight / H);
     }
     return Math.max(hero.clientWidth / W, hero.clientHeight / H) * 1.85;
   }
