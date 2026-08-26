@@ -85,13 +85,6 @@
   .map-stage{position:absolute;left:0;top:0;width:1014px;height:806px;transform-origin:top left;z-index:1;
     transition:transform .35s cubic-bezier(.3,.9,.3,1), top .35s cubic-bezier(.3,.9,.3,1)}
   .map-stage > img.art{position:absolute;inset:0;width:1014px;height:806px;display:block;user-select:none;-webkit-user-drag:none}
-  .map-brand{
-    position:absolute;left:708px;top:512px;width:200px;height:auto;z-index:2;
-    transform:translate(-50%,-50%);pointer-events:none;
-    filter:drop-shadow(0 12px 28px rgba(6,18,41,.22));
-    transition:opacity .4s;
-  }
-  .hero.zoomed .map-brand{opacity:0}
 
   /* soft feather where sharp art meets blur */
   .map-stage::after{content:"";position:absolute;top:0;right:-1px;width:70px;height:100%;
@@ -603,7 +596,6 @@
 
   <div class="map-stage" id="mapStage">
     <img class="art" src="assets/map.png?v=3" alt="Crystal Quest world map" />
-    <img class="map-brand" src="assets/ci-logo.png" alt="Crystal Instruction" />
 
     <div class="pill locked" data-key="place" style="left:176px;top:318px;min-width:212px;min-height:56px;justify-content:center">
       <div class="nm">Place Value</div>
