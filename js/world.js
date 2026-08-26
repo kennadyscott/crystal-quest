@@ -92,17 +92,20 @@ function bootWorld(){
   refreshHUD();
   renderWorldPills();
   const t = continueTarget();
-  const key = t ? t.key : 'place';
-  renderLand(key);
+  if(t){
+    renderLand(t.key);
+    const selected = document.querySelector(`.pill[data-key="${t.key}"]`);
+    document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
+    if(selected && save.lands[t.key]!=='locked') selected.classList.add('selected');
+  } else {
+    renderLockedHome();
+  }
   applyGate();
   syncAvatar();
   spawnWalker();
   if(typeof initExplore==='function') initExplore();
   fitMap();
   if(typeof showExploreIntro==='function') setTimeout(showExploreIntro, 400);
-  const selected = document.querySelector(`.pill[data-key="${key}"]`);
-  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
-  if(selected && save.lands[key]!=='locked') selected.classList.add('selected');
 }
 
 function animateXP(from, to){
@@ -150,9 +153,12 @@ function refreshHUD(){
   if(line) line.textContent = `Keep going, ${save.studentName}!`;
   const sub = $('#hudBuddySub');
   const t = continueTarget();
+  const anyOpen = LAND_KEYS.some(k => save.lands[k]!=='locked');
   if(sub){
     if(t && questsDoneCount()<total){
       sub.textContent = buddyLineForLand(t.key);
+    } else if(!anyOpen){
+      sub.textContent = 'Walk to an island and take its diagnostic to begin.';
     } else {
       sub.textContent = 'You conquered every land. Replay quests anytime!';
     }
@@ -205,6 +211,24 @@ function renderWorldPills(){
       }
     }
   });
+}
+
+function renderLockedHome(){
+  $('#landTitle').textContent = 'Choose an island';
+  $('#landAssignee').textContent = 'Walk the path, then take a diagnostic to unlock it.';
+  const ul = $('#qlist');
+  ul.innerHTML = `<li class="qempty">
+    <div class="qe-ic">🗺️</div>
+    <div class="qe-t">No lands unlocked yet</div>
+    <div class="qe-s">You can have 2 lands in progress at a time. Walk to an island and press <b>Enter</b> to take its diagnostic.</div>
+  </li>`;
+  const tab = $('#drawerTab');
+  if(tab) tab.innerHTML = '⚔️ Quests';
+  const js = $('#journeyFooter .js');
+  const bar = $('#journeyFooter .jbar i');
+  if(js) js.textContent = '0 of 2 lands in progress';
+  if(bar) bar.style.width = '0%';
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
 }
 
 function renderLand(key){
@@ -424,11 +448,21 @@ function applyGate(){
         <div>Assignment first! Complete <b>${save.assignment.title}</b> in the Land of ${LANDS[save.assignment.land].title} to continue your journey. <span class="gb-link" onclick="openModal('asgModal')">View</span></div>`;
     }
   }
+  const target = continueTarget();
+  const anyOpen = LAND_KEYS.some(k => save.lands[k]!=='locked');
   const cont = $('#contBtn');
   if(cont){
     cont.classList.toggle('btn-gated', pending);
-    cont.innerHTML = pending ? '🔒 Assignment First' : 'Continue Quest &nbsp;›';
-    cont.onclick = pending ? gateBlock : continueQuest;
+    if(pending){
+      cont.innerHTML = '🔒 Assignment First';
+      cont.onclick = gateBlock;
+    } else if(!target){
+      cont.innerHTML = anyOpen ? 'Replay a Quest &nbsp;›' : 'Find an Island &nbsp;›';
+      cont.onclick = continueQuest;
+    } else {
+      cont.innerHTML = 'Continue Quest &nbsp;›';
+      cont.onclick = continueQuest;
+    }
   }
   const jf = $('#journeyFooter'), go = $('#journeyGo');
   if(jf) jf.classList.toggle('gated', pending);
@@ -459,7 +493,13 @@ function applyGate(){
 
 function continueQuest(){
   const t = continueTarget();
-  if(!t){ toast('👑','Every land is conquered!'); return; }
+  if(!t){
+    const anyOpen = LAND_KEYS.some(k => save.lands[k]!=='locked');
+    toast(anyOpen ? '👑' : '🗺️', anyOpen
+      ? 'Every land is conquered!'
+      : 'Walk to an island and press Enter to unlock it.');
+    return;
+  }
   openQuest(t.title, LANDS[t.key].title, t.key, t.status==='prog'?0:0, t.status);
 }
 

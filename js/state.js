@@ -206,7 +206,8 @@ function continueTarget(){
     const next = names.find(n => questStatus(n)!=='done');
     if(next) return { title:next, key, status: questStatus(next) };
   }
-  // all done — last land boss for review
+  const anyOpen = LAND_KEYS.some(k => save.lands[k]!=='locked');
+  if(!anyOpen) return null;
   const last = LANDS.data.quests[LANDS.data.quests.length-1].name;
   return { title:last, key:'data', status:'done' };
 }

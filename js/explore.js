@@ -101,7 +101,7 @@ function targetScale(){
   if(camMode==='overview'){
     return Math.min(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 0.96;
   }
-  return Math.max(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 1.22;
+  return Math.max(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 1.08;
 }
 
 function clampWalker(){
@@ -207,9 +207,8 @@ function tryEnterHere(){
 
 function spawnWalker(){
   const t = (typeof continueTarget==='function' && save) ? continueTarget() : null;
-  const key = t ? t.key : 'place';
-  const c = LANDS[key].center;
   if(t && save && save.lands[t.key]!=='locked'){
+    const c = LANDS[t.key].center;
     walker.x = c[0];
     walker.y = c[1] + 42;
   } else {

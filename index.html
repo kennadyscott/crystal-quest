@@ -91,13 +91,10 @@
   .walker{
     position:absolute;z-index:8;transform:translate(-50%,-90%);text-align:center;pointer-events:none;
   }
-  .walker img{height:104px;width:auto;display:block;margin:0 auto;filter:drop-shadow(0 8px 12px rgba(20,18,50,.4))}
+  .walker img{height:42px;width:auto;display:block;margin:0 auto;filter:drop-shadow(0 3px 5px rgba(20,18,50,.35))}
   .walker.flip img{transform:scaleX(-1)}
   .walker.moving img{animation:none}
-  .walker-name{
-    display:inline-block;margin-top:-4px;background:rgba(255,255,255,.95);border-radius:10px;
-    padding:2px 9px;font-weight:800;font-size:11px;color:var(--magenta);box-shadow:0 4px 10px rgba(30,15,60,.25);
-  }
+  .walker-name{display:none}
   .hero.zoomed .walker{opacity:0}
 
   .explore-hint{
@@ -175,6 +172,13 @@
   .qrow.prog .qtag{background:var(--magenta-soft);color:var(--magenta)}
   .qrow.lock .qnm{color:var(--ink-soft)}
   .qrow.lock .qmark{color:#c3bad9}
+  .qempty{
+    list-style:none;padding:36px 18px 24px;text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+  }
+  .qempty .qe-ic{font-size:28px;line-height:1}
+  .qempty .qe-t{font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:-.03em}
+  .qempty .qe-s{font-size:13.5px;color:var(--ink-soft);font-weight:600;line-height:1.45;max-width:280px}
 
   .btn{font-family:var(--font-display);font-weight:800;font-size:15px;padding:12px 22px;border-radius:999px;
     letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:8px;
