@@ -91,7 +91,7 @@
   .walker{
     position:absolute;z-index:8;transform:translate(-50%,-90%);text-align:center;pointer-events:none;
   }
-  .walker img{height:42px;width:auto;display:block;margin:0 auto;filter:drop-shadow(0 3px 5px rgba(20,18,50,.35))}
+  .walker img{height:64px;width:auto;display:block;margin:0 auto;filter:drop-shadow(0 4px 6px rgba(20,18,50,.4))}
   .walker.flip img{transform:scaleX(-1)}
   .walker.moving img{animation:none}
   .walker-name{display:none}
@@ -119,26 +119,56 @@
 
   .pill{
     position:absolute;transform:translate(-50%,-50%);z-index:5;
-    display:flex;align-items:center;gap:10px;background:#fff;
-    border-radius:16px;padding:11px 20px;cursor:pointer;white-space:nowrap;
-    box-shadow:0 8px 22px rgba(40,20,80,.28);
-    transition:box-shadow .15s ease, filter .15s ease;
+    display:flex;align-items:center;gap:7px;
+    padding:7px 11px 7px 9px;max-width:172px;
+    background:linear-gradient(180deg,rgba(12,22,48,.72),rgba(6,18,41,.84));
+    border:1px solid rgba(255,255,255,.22);
+    border-radius:11px;cursor:pointer;color:#fff;
+    box-shadow:0 8px 18px rgba(6,18,41,.38);
+    backdrop-filter:blur(8px);
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, opacity .4s;
   }
-  .pill:hover{filter:brightness(1.03);box-shadow:0 12px 28px rgba(40,20,80,.36)}
-  .pill .check{width:30px;height:30px;border-radius:50%;background:var(--emerald);color:#fff;display:grid;place-items:center;font-size:15px;font-weight:800}
-  .pill .nm{font-family:var(--font-display);font-weight:800;font-size:16.5px;letter-spacing:-.03em;color:var(--ink)}
-  .pill.locked .nm{color:#4a4360}
-  .pill.active-land{border:2px solid #f3a8d3;border-radius:18px;padding:10px 22px;display:block;text-align:left}
-  .pill.active-land .nm{color:var(--magenta);font-size:17.5px}
-  .pill.active-land .sub{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-soft);font-weight:600;margin-top:3px}
-  .pill.active-land .bar{width:86px;height:8px;border-radius:5px;background:#eadff2;overflow:hidden;display:inline-block}
-  .pill.active-land .bar i{display:block;height:100%;border-radius:5px;background:var(--magenta)}
-  .pill.selected{box-shadow:0 0 0 3px rgba(123,47,247,.5),0 12px 28px rgba(40,20,80,.36)}
-  .lockchip{
-    position:absolute;transform:translate(-50%,-50%);z-index:5;
-    width:56px;height:56px;border-radius:16px;background:#fff;display:grid;place-items:center;
-    box-shadow:0 8px 20px rgba(40,20,80,.26);cursor:pointer;font-size:22px;color:#4a4360;
+  .pill::after{
+    content:"";position:absolute;left:50%;top:100%;width:8px;height:8px;
+    margin:-5px 0 0 -4px;transform:rotate(45deg);
+    background:#08142e;border-right:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2);
   }
+  .pill:hover{transform:translate(-50%,calc(-50% - 3px));border-color:rgba(255,255,255,.45)}
+  .pill .mark{
+    width:16px;height:16px;flex:none;display:grid;place-items:center;
+    color:rgba(255,255,255,.9);
+  }
+  .pill .mark svg{width:12px;height:12px;display:block}
+  .pill .mark.gem{
+    width:11px;height:11px;margin:0 2px;
+    background:linear-gradient(135deg,#ff7ae8,#8b35f6 55%,#6d35ff);
+    transform:rotate(45deg);border-radius:2px;
+    box-shadow:0 0 8px rgba(236,24,200,.55);
+  }
+  .pill .mark.done{
+    width:15px;height:15px;border-radius:50%;background:var(--emerald);color:#fff;
+    font-size:9px;font-weight:800;line-height:1;
+  }
+  .pill .copy{display:flex;flex-direction:column;gap:1px;min-width:0;text-align:left}
+  .pill .fl{
+    font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:-.02em;
+    line-height:1.15;color:#fff;text-shadow:0 1px 2px rgba(6,18,41,.55);white-space:nowrap;
+  }
+  .pill .nm{
+    font-weight:650;font-size:10.5px;letter-spacing:.01em;line-height:1.2;
+    color:rgba(255,236,255,.78);white-space:normal;
+  }
+  .pill .sub{
+    display:block;height:3px;margin-top:4px;border-radius:99px;
+    background:rgba(255,255,255,.16);overflow:hidden;
+  }
+  .pill .sub i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ec18c8,#8b35f6)}
+  .pill.locked{opacity:.9}
+  .pill.locked .fl{color:rgba(255,255,255,.88)}
+  .pill.active-land{border-color:rgba(236,24,200,.7);box-shadow:0 0 0 1px rgba(236,24,200,.28),0 8px 20px rgba(236,24,200,.22)}
+  .pill.done{border-color:rgba(20,180,126,.5)}
+  .pill.selected{border-color:#c77dff;box-shadow:0 0 0 2px rgba(139,53,246,.55),0 10px 22px rgba(6,18,41,.4)}
+  .lockchip{display:none}
 
   /* ============ QUEST DRAWER (floating glass) ============ */
   .drawer{
@@ -311,7 +341,6 @@
   .hero{cursor:grab}
   .hero.is-dragging{cursor:grabbing}
   .hero.zoomed .pill,.hero.zoomed .lockchip{opacity:0;pointer-events:none}
-  .pill,.lockchip{transition:opacity .4s}
   .hero.zoomed .drawer,.hero.zoomed .drawer-tab,.hero.zoomed .hud{opacity:0;pointer-events:none;transition:opacity .4s}
 
   .land-view{position:absolute;inset:0;z-index:40;opacity:0;pointer-events:none;transition:opacity .45s .15s}
@@ -487,7 +516,7 @@
   .level-badge.pop{animation:lvpop .6s}
   @keyframes lvpop{40%{transform:scale(1.35) rotate(-6deg)}70%{transform:scale(.95)}}
   .pill.unlock-glow{animation:unlockglow 1.6s 3}
-  @keyframes unlockglow{50%{box-shadow:0 0 0 8px rgba(255,209,102,.5),0 8px 22px rgba(40,20,80,.28)}}
+  @keyframes unlockglow{50%{box-shadow:0 0 0 6px rgba(255,209,102,.45),0 8px 18px rgba(6,18,41,.38)}}
 
   /* ============ TITLE + SETUP ============ */
   .title-screen{
@@ -626,35 +655,12 @@
       <div class="walker-name" id="walkerName"></div>
     </div>
 
-    <div class="pill locked" data-key="place" style="left:176px;top:318px;min-width:212px;min-height:56px;justify-content:center">
-      <div class="nm">Place Value</div>
-    </div>
-
-    <div class="pill locked" data-key="mult" style="left:549px;top:345px;min-width:252px;min-height:78px;justify-content:center">
-      <div class="nm">Multiplication &amp; Division</div>
-    </div>
-
-    <div class="pill locked" data-key="dec" style="left:875px;top:320px;min-width:170px;min-height:52px;justify-content:center">
-      <div class="nm">Decimals</div>
-    </div>
-
-    <div class="pill locked" data-key="frac" style="left:184px;top:617px;min-width:178px;min-height:56px;justify-content:center">
-      <div class="nm">Fractions</div>
-    </div>
-
-    <div class="pill locked" data-key="geo" style="left:487px;top:698px;min-width:178px;min-height:54px;justify-content:center">
-      <div class="nm">Geometry</div>
-    </div>
-
-    <div class="pill locked" data-key="data" style="left:853px;top:626px;min-width:176px;min-height:54px;justify-content:center">
-      <div class="nm">Data</div>
-    </div>
-
-    <div class="lockchip" data-lock="mult" style="left:549px;top:272px">🔒</div>
-    <div class="lockchip" data-lock="dec"  style="left:875px;top:253px">🔒</div>
-    <div class="lockchip" data-lock="frac" style="left:184px;top:547px">🔒</div>
-    <div class="lockchip" data-lock="geo"  style="left:488px;top:628px">🔒</div>
-    <div class="lockchip" data-lock="data" style="left:852px;top:553px">🔒</div>
+    <div class="pill locked" data-key="place" style="left:176px;top:318px"></div>
+    <div class="pill locked" data-key="mult" style="left:549px;top:345px"></div>
+    <div class="pill locked" data-key="dec" style="left:918px;top:305px"></div>
+    <div class="pill locked" data-key="frac" style="left:184px;top:617px"></div>
+    <div class="pill locked" data-key="geo" style="left:487px;top:698px"></div>
+    <div class="pill locked" data-key="data" style="left:853px;top:626px"></div>
   </div>
 
   <!-- ============ LAND VIEW (zoomed-in island) ============ -->

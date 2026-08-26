@@ -30,7 +30,7 @@ const LANDS = {
       {name:'Word Problems', icon:'❓'}
     ]},
   dec:{ title:'Decimals', center:[875,300],
-    pill:[875,320], lockchip:[875,253],
+    pill:[918,305], lockchip:[875,253],
     unlocks:[], requires:'mult',
     flavor:'The Ice Spires',
     buddy:'The dot is a tiny doorway!',

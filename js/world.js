@@ -166,19 +166,28 @@ function refreshHUD(){
   applyGate();
 }
 
+function landFlavor(key){
+  const raw = (LANDS[key] && LANDS[key].flavor) || LANDS[key].title;
+  return String(raw).replace(/^The /,'');
+}
+
+function pillMark(kind){
+  if(kind==='done') return '<span class="mark done" aria-hidden="true">✓</span>';
+  if(kind==='lock') return `<span class="mark lock" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2.4" y="5.4" width="7.2" height="5.1" rx="1.2"/><path d="M4.1 5.4V3.9a1.9 1.9 0 0 1 3.8 0v1.5"/></svg></span>`;
+  return '<span class="mark gem" aria-hidden="true"></span>';
+}
+
 function pillHTML(key){
   const L = LANDS[key];
   const landState = save.lands[key];
   const stats = landQuestStats(key);
-  if(landState==='locked'){
-    return `<div class="nm">${L.title}</div>`;
-  }
-  if(landState==='conquered' || stats.allDone){
-    return `<div class="check">✓</div><div class="nm">${L.title}</div>`;
-  }
-  const pct = Math.round(stats.done/stats.total*100);
-  return `<div class="nm">${L.title}</div>
-    <div class="sub"><span>${stats.done} / ${stats.total} Quests</span> <span class="bar"><i style="width:${pct}%"></i></span></div>`;
+  const done = landState==='conquered' || stats.allDone;
+  const locked = landState==='locked';
+  const mark = pillMark(done ? 'done' : (locked ? 'lock' : 'gem'));
+  const bar = (!locked && !done)
+    ? `<span class="sub"><i style="width:${Math.round(stats.done/stats.total*100)}%"></i></span>`
+    : '';
+  return `${mark}<span class="copy"><span class="fl">${landFlavor(key)}</span><span class="nm">${L.title}</span>${bar}</span>`;
 }
 
 function renderWorldPills(){
@@ -187,29 +196,15 @@ function renderWorldPills(){
     if(!pill) return;
     const landState = save.lands[key];
     const stats = landQuestStats(key);
-    pill.classList.remove('done','active-land','locked','selected','unlock-glow');
-    if(landState==='locked'){
-      pill.classList.add('locked');
-      pill.style.display = '';
-      pill.style.minHeight = '52px';
-      pill.innerHTML = pillHTML(key);
-    } else if(landState==='conquered' || stats.allDone){
-      pill.classList.add('done');
-      pill.style.display = 'flex';
-      pill.innerHTML = pillHTML(key);
-    } else {
-      pill.classList.add('active-land');
-      pill.style.display = 'block';
-      pill.innerHTML = pillHTML(key);
-    }
-    const chip = document.querySelector(`.lockchip[data-lock="${key}"]`);
-    if(chip){
-      chip.style.display = landState==='locked' ? '' : 'none';
-      if(landState==='locked'){
-        chip.style.opacity = '';
-        chip.style.transform = 'translate(-50%,-50%)';
-      }
-    }
+    const keepSel = pill.classList.contains('selected');
+    pill.classList.remove('done','active-land','locked','unlock-glow');
+    if(landState==='locked') pill.classList.add('locked');
+    else if(landState==='conquered' || stats.allDone) pill.classList.add('done');
+    else pill.classList.add('active-land');
+    if(keepSel) pill.classList.add('selected');
+    pill.style.minHeight = '';
+    pill.style.minWidth = '';
+    pill.innerHTML = pillHTML(key);
   });
 }
 
@@ -504,13 +499,6 @@ function continueQuest(){
 }
 
 function onLandUnlocked(key){
-  const chip = document.querySelector(`.lockchip[data-lock="${key}"]`);
-  if(chip){
-    chip.style.transition='transform .5s, opacity .5s';
-    chip.style.transform='translate(-50%,-95%) scale(1.6) rotate(16deg)';
-    chip.style.opacity='0';
-    setTimeout(()=>{ chip.style.display='none'; chip.style.opacity='1'; chip.style.transform='translate(-50%,-50%)'; }, 520);
-  }
   const pill = document.querySelector(`.pill[data-key="${key}"]`);
   renderWorldPills();
   if(pill){ pill.classList.add('unlock-glow'); }
