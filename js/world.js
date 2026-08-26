@@ -387,7 +387,7 @@ function buildLandView(key){
   const buddy = document.createElement('div');
   buddy.className = 'buddy-wrap';
   buddy.style.left = (bx/10)+'%'; buddy.style.top = (by/5.6)+'%';
-  buddy.innerHTML = `<span class="av-wrap"><img src="assets/mascot.png?v=2" style="filter:hue-rotate(${avatar.hue}deg)"/><span class="av-acc">${avatar.acc||''}</span></span><br><span class="tag">${avatar.name}</span>`;
+  buddy.innerHTML = `<span class="av-wrap"><img src="assets/mascot.png?v=3" style="filter:hue-rotate(${avatar.hue}deg)"/><span class="av-acc">${avatar.acc||''}</span></span><br><span class="tag">${avatar.name}</span>`;
   stage.appendChild(buddy);
 }
 
