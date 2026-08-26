@@ -1,6 +1,35 @@
 /* Crystal Quest — pan, walk, camera follow */
 const MAP_W = 1014, MAP_H = 806;
 const PATH_SNAP = 28;
+const WORLD_ART = { src:'assets/map.jpg?v=4', w:MAP_W, h:MAP_H };
+
+function currentArt(){
+  if(typeof inLand!=='undefined' && inLand && currentLandKey && LANDS[currentLandKey] && LANDS[currentLandKey].art){
+    return LANDS[currentLandKey].art;
+  }
+  return WORLD_ART;
+}
+function mapW(){ return currentArt().w; }
+function mapH(){ return currentArt().h; }
+
+function applyMapArt(){
+  const art = currentArt();
+  const stage = $('#mapStage');
+  const img = stage && stage.querySelector('img.art');
+  if(stage){
+    stage.style.width = art.w+'px';
+    stage.style.height = art.h+'px';
+  }
+  if(img){
+    if(img.getAttribute('src') !== art.src) img.src = art.src;
+    img.style.width = art.w+'px';
+    img.style.height = art.h+'px';
+  }
+  const blur = $('#bgBlur');
+  if(blur){
+    blur.style.backgroundImage = `url('${art.src}')`;
+  }
+}
 /* Wooden / sand paths matching the painted map (map-pixel coords). */
 const PATHS = [
   // Place Value trail
@@ -36,8 +65,10 @@ function closestOnSeg(px,py,ax,ay,bx,by){
 }
 
 function activePaths(){
-  if(typeof inLand!=='undefined' && inLand && currentLandKey && LANDS[currentLandKey] && LANDS[currentLandKey].path){
-    return [LANDS[currentLandKey].path];
+  if(typeof inLand!=='undefined' && inLand && currentLandKey && LANDS[currentLandKey]){
+    const L = LANDS[currentLandKey];
+    if(L.paths) return L.paths;
+    if(L.path) return [L.path];
   }
   return PATHS;
 }
@@ -59,7 +90,8 @@ function tryWalkOnPath(dx, dy){
   const snap=snapToPath(nx, ny);
   if(!snap) return false;
   const along=(snap.x-walker.x)*dx + (snap.y-walker.y)*dy;
-  if(snap.d <= PATH_SNAP && along >= -0.4){
+  const snapR = (inLand && LANDS[currentLandKey] && LANDS[currentLandKey].art) ? 42 : PATH_SNAP;
+  if(snap.d <= snapR && along >= -0.4){
     walker.x=snap.x; walker.y=snap.y;
     return true;
   }
@@ -111,29 +143,35 @@ function exploreBusy(){
 function targetScale(){
   const hero = $('#hero');
   if(!hero) return 1;
+  const W = mapW(), H = mapH();
   if(camMode==='overview'){
-    return Math.min(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 0.96;
+    return Math.min(hero.clientWidth / W, hero.clientHeight / H) * 0.96;
   }
   if(camMode==='land'){
-    return Math.max(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 1.85;
+    if(currentArt().src !== WORLD_ART.src){
+      return Math.min(hero.clientWidth / W, hero.clientHeight / H) * 0.98;
+    }
+    return Math.max(hero.clientWidth / W, hero.clientHeight / H) * 1.85;
   }
-  return Math.max(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 1.08;
+  return Math.max(hero.clientWidth / W, hero.clientHeight / H) * 1.08;
 }
 
 function clampWalker(){
-  walker.x = Math.max(40, Math.min(MAP_W-40, walker.x));
-  walker.y = Math.max(70, Math.min(MAP_H-24, walker.y));
+  const W = mapW(), H = mapH();
+  walker.x = Math.max(40, Math.min(W-40, walker.x));
+  walker.y = Math.max(70, Math.min(H-24, walker.y));
 }
 
 function clampCam(){
   const hero = $('#hero'); if(!hero) return;
   const s = mapCam.scale;
+  const W = mapW(), H = mapH();
   const halfW = hero.clientWidth / (2 * s);
   const halfH = hero.clientHeight / (2 * s);
-  if(MAP_W <= halfW*2) mapCam.x = MAP_W/2;
-  else mapCam.x = Math.min(MAP_W - halfW, Math.max(halfW, mapCam.x));
-  if(MAP_H <= halfH*2) mapCam.y = MAP_H/2;
-  else mapCam.y = Math.min(MAP_H - halfH, Math.max(halfH, mapCam.y));
+  if(W <= halfW*2) mapCam.x = W/2;
+  else mapCam.x = Math.min(W - halfW, Math.max(halfW, mapCam.x));
+  if(H <= halfH*2) mapCam.y = H/2;
+  else mapCam.y = Math.min(H - halfH, Math.max(halfH, mapCam.y));
 }
 
 function applyCamera(instant){
@@ -154,7 +192,7 @@ function applyCamera(instant){
   const blur = $('#bgBlur');
   if(blur){
     blur.style.transition = stage.style.transition.replace('transform','background-position, background-size');
-    blur.style.backgroundSize = (MAP_W * s) + 'px ' + (MAP_H * s) + 'px';
+    blur.style.backgroundSize = (mapW() * s) + 'px ' + (mapH() * s) + 'px';
     blur.style.backgroundPosition = tx + 'px ' + ty + 'px';
   }
 }
@@ -197,7 +235,7 @@ function nearestQuest(){
   if(!inLand || !currentLandKey) return null;
   const L = LANDS[currentLandKey];
   const nodes = (typeof landNodes==='function') ? landNodes(currentLandKey) : (L.nodes||[]);
-  let best = null, bestD = 42;
+  let best = null, bestD = 70;
   L.quests.forEach((q,i)=>{
     const xy = nodes[i]; if(!xy) return;
     const d = Math.hypot(walker.x - xy[0], walker.y - xy[1]);
@@ -314,7 +352,7 @@ function exploreTick(){
   if(dx || dy){
     beginFollow();
     const len = Math.hypot(dx, dy) || 1;
-    const step = 3.1;
+    const step = (inLand && LANDS[currentLandKey] && LANDS[currentLandKey].art) ? 4.6 : 3.1;
     const moved = tryWalkOnPath((dx/len)*step, (dy/len)*step);
     if(dx) walker.facing = dx < 0 ? -1 : 1;
     walker.moving = !!moved;

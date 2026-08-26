@@ -327,25 +327,31 @@ function landNodes(key){
   return NODE_XY.slice(0, (L && L.quests.length) || 0);
 }
 
+let worldPos = { x: 215, y: 400 };
+
 function enterLand(key){
+  const L = LANDS[key];
+  if(typeof walker!=='undefined' && !inLand){
+    worldPos = { x: walker.x, y: walker.y };
+  }
   inLand = true; currentLandKey = key;
   const hero = $('#hero');
   if(hero) hero.classList.add('in-land');
-  const L = LANDS[key];
+  if(typeof applyMapArt==='function') applyMapArt();
   const nodes = landNodes(key);
   let idx = L.quests.findIndex(q => questStatus(q.name)!=='done');
   if(idx < 0) idx = Math.max(0, L.quests.length - 1);
-  const node = nodes[idx] || L.center;
+  const start = L.spawn || nodes[idx] || L.center;
   if(typeof walker!=='undefined'){
-    walker.x = node[0];
-    walker.y = node[1];
+    walker.x = start[0];
+    walker.y = start[1];
     walker.moving = false;
     if(typeof placeWalker==='function') placeWalker();
   }
   if(typeof camMode!=='undefined'){
     camMode = 'land';
-    mapCam.x = node[0];
-    mapCam.y = node[1];
+    mapCam.x = (L.art ? L.art.w/2 : start[0]);
+    mapCam.y = (L.art ? L.art.h/2 : start[1]);
     applyCamera(false);
   }
   buildLandView(key);
@@ -353,11 +359,20 @@ function enterLand(key){
 }
 
 function exitLand(){
+  const gate = currentLandKey && LANDS[currentLandKey] && LANDS[currentLandKey].worldGate;
   $('#landView').classList.remove('open');
   const hero = $('#hero');
   if(hero) hero.classList.remove('in-land','zoomed');
   document.querySelectorAll('.qsite').forEach(n=>n.remove());
   inLand = false; currentLandKey = null;
+  if(typeof applyMapArt==='function') applyMapArt();
+  if(typeof walker!=='undefined'){
+    const back = gate || [worldPos.x, worldPos.y];
+    walker.x = back[0];
+    walker.y = back[1];
+    walker.moving = false;
+    if(typeof placeWalker==='function') placeWalker();
+  }
   if(typeof camMode!=='undefined'){
     camMode = 'follow';
     if(typeof walker!=='undefined'){
