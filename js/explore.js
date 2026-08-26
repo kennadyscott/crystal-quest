@@ -153,7 +153,7 @@ function targetScale(){
   }
   if(camMode==='land'){
     if(currentArt().src !== WORLD_ART.src){
-      return Math.max(hero.clientWidth / W, hero.clientHeight / H);
+      return Math.min(hero.clientWidth / W, hero.clientHeight / H);
     }
     return Math.max(hero.clientWidth / W, hero.clientHeight / H) * 1.85;
   }
@@ -196,8 +196,14 @@ function applyCamera(instant){
   const blur = $('#bgBlur');
   if(blur){
     blur.style.transition = stage.style.transition.replace('transform','background-position, background-size');
-    blur.style.backgroundSize = (mapW() * s) + 'px ' + (mapH() * s) + 'px';
-    blur.style.backgroundPosition = tx + 'px ' + ty + 'px';
+    const W = mapW(), H = mapH();
+    const cover = (camMode==='land' && currentArt().src !== WORLD_ART.src)
+      ? Math.max(hero.clientWidth / W, hero.clientHeight / H)
+      : s;
+    const bx = hero.clientWidth/2 - mapCam.x * cover;
+    const by = hero.clientHeight/2 - mapCam.y * cover;
+    blur.style.backgroundSize = (W * cover) + 'px ' + (H * cover) + 'px';
+    blur.style.backgroundPosition = bx + 'px ' + by + 'px';
   }
 }
 
