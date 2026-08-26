@@ -93,10 +93,7 @@
   }
   .walker img{height:104px;width:auto;display:block;margin:0 auto;filter:drop-shadow(0 8px 12px rgba(20,18,50,.4))}
   .walker.flip img{transform:scaleX(-1)}
-  .walker.moving img{animation:walkbob .28s ease-in-out infinite}
-  @keyframes walkbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-  .walker.flip.moving img{animation:walkbob-flip .28s ease-in-out infinite}
-  @keyframes walkbob-flip{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-5px)}}
+  .walker.moving img{animation:none}
   .walker-name{
     display:inline-block;margin-top:-4px;background:rgba(255,255,255,.95);border-radius:10px;
     padding:2px 9px;font-weight:800;font-size:11px;color:var(--magenta);box-shadow:0 4px 10px rgba(30,15,60,.25);
@@ -117,7 +114,7 @@
     border:2.5px solid var(--line);border-radius:16px;background:#fff;padding:8px 6px 6px;cursor:pointer;
     display:flex;flex-direction:column;align-items:center;gap:4px;
   }
-  .av-pick img{width:84px;height:84px;object-fit:contain}
+  .av-pick img{width:auto;height:120px;object-fit:contain}
   .av-pick span{font-weight:800;font-size:12px;color:var(--ink)}
   .av-pick.sel{border-color:var(--magenta);background:var(--magenta-soft);box-shadow:0 0 0 3px rgba(236,24,200,.16)}
   .av-pick:hover{border-color:var(--crystal)}
@@ -609,7 +606,7 @@
     <div class="level-badge"><div class="lv">Level</div><div class="num">1</div></div>
     <div class="metric"><span class="ic">🔥</span><div><div class="n" id="streakNum">1</div><div class="l">Day Streak</div></div></div>
     <button class="avatar-wrap" onclick="showTitle()" title="Switch adventure">
-      <img id="topAvatarImg" src="assets/avatars/mai.png" alt="" /><span class="who" id="studentName">Explorer</span><span class="chev">▼</span>
+      <img id="topAvatarImg" src="assets/avatars/mai.png?v=4" alt="" /><span class="who" id="studentName">Explorer</span><span class="chev">▼</span>
     </button>
   </div>
 </header>
@@ -621,7 +618,7 @@
   <div class="map-stage" id="mapStage">
     <img class="art" src="assets/map.jpg?v=4" alt="Crystal Quest world map" />
     <div class="walker" id="walker">
-      <img id="walkerImg" src="assets/avatars/mai.png" alt="">
+      <img id="walkerImg" src="assets/avatars/mai.png?v=4?v=4" alt="">
       <div class="walker-name" id="walkerName"></div>
     </div>
 
@@ -731,7 +728,7 @@
     <div class="divider d-m"></div>
     <div class="mascot">
       <button class="av-wrap" id="hudBuddy" title="Change your avatar" onclick="openAvatar()">
-        <img id="hudBuddyImg" src="assets/avatars/mai.png" alt="Your avatar" />
+        <img id="hudBuddyImg" src="assets/avatars/mai.png?v=4" alt="Your avatar" />
       </button>
       <div style="min-width:0">
         <div class="m-t" id="hudBuddyLine">Keep going!</div>
@@ -759,7 +756,7 @@
   <div class="qp-body" id="qpBody"></div>
   <div class="qp-buddy">
     <span class="av-wrap">
-      <img id="qpBuddyImg" src="assets/avatars/mai.png" alt="" />
+      <img id="qpBuddyImg" src="assets/avatars/mai.png?v=4" alt="" />
     </span>
     <div class="qp-bubble" id="qpBubble">Let's do this!</div>
   </div>
@@ -858,6 +855,22 @@
       <p>This is who walks the Crystal Isles. Pick one — you can change anytime.</p>
       <div class="av-grid" id="avPickGrid"></div>
       <button class="btn btn-primary" style="margin-top:18px" onclick="saveAvatar()">That's me ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== EXPLORE INTRO ===================== -->
+<div class="modal-scrim" id="exploreIntro" onclick="if(event.target===this)dismissExploreIntro()">
+  <div class="modal" style="max-width:440px">
+    <div class="mh">
+      <div class="kick">You're on the Crystal Isles</div>
+      <h2>Ready to explore?</h2>
+    </div>
+    <div class="mb">
+      <p>Use the <b>arrow keys</b> (or WASD) to walk. The map will zoom in once you start moving.</p>
+      <p>Walk up to a land and press <b>Enter</b> to go inside — or click a label.</p>
+      <p style="margin-bottom:18px">Drag the water to look around.</p>
+      <button class="btn btn-primary" onclick="dismissExploreIntro()">Let's go ✦</button>
     </div>
   </div>
 </div>

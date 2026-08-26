@@ -7,19 +7,23 @@ const AVATARS = [
   { id:'nolan',  label:'Nolan' },
   { id:'lena',   label:'Lena' }
 ];
-function avatarSrc(id){
+function avatarSrc(id, frame){
   const ok = AVATARS.some(a => a.id===id);
-  return 'assets/avatars/' + (ok?id:'mai') + '.png?v=3';
+  const who = ok?id:'mai';
+  const file = frame ? (who+'-'+frame+'.png') : (who+'.png');
+  return 'assets/avatars/' + file + '?v=4';
 }
 function avatarOf(id){ return AVATARS.find(a => a.id===id) || AVATARS[0]; }
 
-let mapCam = { x: 549, y: 345, scale: 1 };
-let walker = { x: 549, y: 380, facing: 1, moving: false };
+let mapCam = { x: MAP_W/2, y: MAP_H/2, scale: 1 };
+let camMode = 'overview'; // overview until first walk, then follow
+let walker = { x: 176, y: 360, facing: 1, moving: false, frame: 0, frameT: 0 };
 let exploreDrag = null;
 let exploreRaf = 0;
 let exploreBound = false;
 let suppressClick = false;
 const held = {};
+const WALK_ORDER = [null, 'walk-a', null, 'walk-b']; // idle, L, idle, R
 
 function exploreBusy(){
   if(inLand) return true;
@@ -33,10 +37,13 @@ function exploreBusy(){
   return false;
 }
 
-function coverScale(){
+function targetScale(){
   const hero = $('#hero');
   if(!hero) return 1;
-  return Math.max(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 1.06;
+  if(camMode==='overview'){
+    return Math.min(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 0.96;
+  }
+  return Math.max(hero.clientWidth / MAP_W, hero.clientHeight / MAP_H) * 1.22;
 }
 
 function clampWalker(){
@@ -49,27 +56,41 @@ function clampCam(){
   const s = mapCam.scale;
   const halfW = hero.clientWidth / (2 * s);
   const halfH = hero.clientHeight / (2 * s);
-  mapCam.x = Math.min(MAP_W - halfW, Math.max(halfW, mapCam.x));
-  mapCam.y = Math.min(MAP_H - halfH, Math.max(halfH, mapCam.y));
+  if(MAP_W <= halfW*2) mapCam.x = MAP_W/2;
+  else mapCam.x = Math.min(MAP_W - halfW, Math.max(halfW, mapCam.x));
+  if(MAP_H <= halfH*2) mapCam.y = MAP_H/2;
+  else mapCam.y = Math.min(MAP_H - halfH, Math.max(halfH, mapCam.y));
 }
 
 function applyCamera(instant){
   const hero = $('#hero'), stage = $('#mapStage');
   if(!hero || !stage || inLand) return;
-  mapCam.scale = coverScale();
+  mapCam.scale = targetScale();
   clampCam();
   const s = mapCam.scale;
   const tx = hero.clientWidth/2 - mapCam.x * s;
   const ty = hero.clientHeight/2 - mapCam.y * s;
   stage.style.top = '0px';
   stage.style.left = '0px';
-  stage.style.transition = instant ? 'none' : (exploreDrag ? 'none' : 'transform .18s ease-out');
+  const zooming = camMode==='follow' && !instant && !exploreDrag;
+  stage.style.transition = instant || exploreDrag
+    ? 'none'
+    : (zooming ? 'transform .75s cubic-bezier(.3,.85,.3,1)' : 'transform .18s ease-out');
   stage.style.transform = `translate(${tx}px,${ty}px) scale(${s})`;
   const blur = $('#bgBlur');
   if(blur){
+    blur.style.transition = stage.style.transition.replace('transform','background-position, background-size');
     blur.style.backgroundSize = (MAP_W * s) + 'px ' + (MAP_H * s) + 'px';
     blur.style.backgroundPosition = tx + 'px ' + ty + 'px';
   }
+}
+
+function beginFollow(){
+  if(camMode==='follow') return;
+  camMode = 'follow';
+  mapCam.x = walker.x;
+  mapCam.y = walker.y;
+  applyCamera(false);
 }
 
 function placeWalker(){
@@ -78,6 +99,13 @@ function placeWalker(){
   el.style.top = walker.y + 'px';
   el.classList.toggle('moving', walker.moving);
   el.classList.toggle('flip', walker.facing < 0);
+  const img = $('#walkerImg');
+  if(img){
+    const id = (save && save.avatar && save.avatar.id) || (avatar && avatar.id) || 'mai';
+    const pose = walker.moving ? WALK_ORDER[walker.frame % WALK_ORDER.length] : null;
+    const next = avatarSrc(id, pose);
+    if(img.dataset.pose !== next){ img.src = next; img.dataset.pose = next; }
+  }
 }
 
 function nearestLand(){
@@ -101,6 +129,9 @@ function updateExploreHint(){
       ? `🔒 ${L.title} is still locked`
       : `↵  Enter the Land of <b>${L.title}</b>`;
     hint.classList.add('show');
+  } else if(camMode==='overview'){
+    hint.innerHTML = 'Use the <b>arrow keys</b> to start exploring';
+    hint.classList.add('show');
   } else {
     hint.innerHTML = 'Arrow keys to walk · Drag to look around';
     hint.classList.add('show');
@@ -121,8 +152,11 @@ function spawnWalker(){
   walker.x = c[0];
   walker.y = c[1] + 42;
   walker.facing = 1;
-  mapCam.x = walker.x;
-  mapCam.y = walker.y;
+  walker.moving = false;
+  walker.frame = 0;
+  camMode = 'overview';
+  mapCam.x = MAP_W/2;
+  mapCam.y = MAP_H/2;
   clampWalker();
   syncWalkerArt();
   placeWalker();
@@ -132,11 +166,19 @@ function spawnWalker(){
 function syncWalkerArt(){
   const id = (save && save.avatar && save.avatar.id) || (avatar && avatar.id) || 'mai';
   const src = avatarSrc(id);
-  const w = $('#walkerImg'); if(w) w.src = src;
+  const w = $('#walkerImg'); if(w){ w.src = src; w.dataset.pose = src; }
   const n = $('#walkerName'); if(n) n.textContent = (save && save.studentName) || '';
   const hud = $('#hudBuddyImg'); if(hud){ hud.src = src; hud.style.filter = ''; }
   const qb = $('#qpBuddyImg'); if(qb){ qb.src = src; qb.style.filter = ''; }
   const top = $('#topAvatarImg'); if(top) top.src = src;
+}
+
+function showExploreIntro(){
+  openModal('exploreIntro');
+}
+
+function dismissExploreIntro(){
+  closeModal('exploreIntro');
 }
 
 function exploreTick(){
@@ -152,17 +194,22 @@ function exploreTick(){
   if(held.ArrowUp || held.w || held.W) dy -= 1;
   if(held.ArrowDown || held.s || held.S) dy += 1;
   if(dx || dy){
+    beginFollow();
     const len = Math.hypot(dx, dy) || 1;
     walker.x += (dx/len) * 2.6;
     walker.y += (dy/len) * 2.6;
     if(dx) walker.facing = dx < 0 ? -1 : 1;
     walker.moving = true;
+    walker.frameT += 1;
+    if(walker.frameT >= 7){ walker.frameT = 0; walker.frame++; }
     clampWalker();
     mapCam.x += (walker.x - mapCam.x) * 0.14;
     mapCam.y += (walker.y - mapCam.y) * 0.14;
     applyCamera(true);
   } else {
     walker.moving = false;
+    walker.frame = 0;
+    walker.frameT = 0;
   }
   placeWalker();
   updateExploreHint();
@@ -207,6 +254,13 @@ function initExplore(){
   hero.addEventListener('pointercancel', endDrag);
 
   window.addEventListener('keydown', e => {
+    const intro = $('#exploreIntro');
+    if(intro && intro.classList.contains('open') && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','w','a','s','d','W','A','S','D','Enter'].includes(e.key)){
+      e.preventDefault();
+      dismissExploreIntro();
+      held[e.key] = true;
+      return;
+    }
     if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)){
       if(!exploreBusy()) e.preventDefault();
     }

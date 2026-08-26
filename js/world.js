@@ -99,6 +99,7 @@ function bootWorld(){
   spawnWalker();
   if(typeof initExplore==='function') initExplore();
   fitMap();
+  if(typeof showExploreIntro==='function') setTimeout(showExploreIntro, 400);
   const selected = document.querySelector(`.pill[data-key="${key}"]`);
   document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
   if(selected && save.lands[key]!=='locked') selected.classList.add('selected');
