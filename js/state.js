@@ -67,9 +67,9 @@ function emptyQuestLog(){
 function defaultAvatar(){
   try{
     const a = JSON.parse(localStorage.getItem(AVATAR_KEY));
-    if(a && typeof a.name==='string') return a;
+    if(a && a.id) return { id: a.id };
   }catch(e){}
-  return { hue:0, acc:'', name:'Sparkle' };
+  return { id:'maya' };
 }
 
 function newAdventureSave(studentName, avatar){

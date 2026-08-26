@@ -1,7 +1,7 @@
 /* Crystal Quest — map, HUD, title, ceremonies */
 let inLand = false, currentLandKey = null;
-let avatar = { hue:0, acc:'', name:'Sparkle' };
-let tempAv = { hue:0, acc:'', name:'Sparkle' };
+let avatar = { id:'maya' };
+let tempAv = { id:'maya' };
 const NODE_XY = [[120,440],[300,340],[190,225],[390,150],[620,225],[840,120]];
 const HUES = [
   {n:'Pink', v:0,    c:'#ec18c8'},
@@ -13,16 +13,7 @@ const ACCS = ['','🎀','🧢','👑','⭐','😎'];
 
 function fitMap(){
   if (inLand) return;
-  const hero = $('#hero'), stage = $('#mapStage');
-  if(!hero || !stage) return;
-  const h = hero.clientHeight, w = hero.clientWidth;
-  const drawer = $('#drawer');
-  const drawerOpen = drawer && !drawer.classList.contains('collapsed');
-  const s = drawerOpen
-    ? Math.min(h / 806, (w - 386) / 960, w / 1014)
-    : Math.min(h / 806, w / 1014);
-  stage.style.transform = `scale(${s})`;
-  stage.style.top = ((h - 806 * s) / 2) + 'px';
+  if (typeof applyCamera==='function') applyCamera(true);
 }
 window.addEventListener('resize', fitMap);
 
@@ -68,18 +59,14 @@ function continueSave(){
 function startNewAdventure(){
   if(loadSave() && !confirm('Start a new adventure? This replaces the saved one on this device.')) return;
   $('#setupName').value = '';
-  tempAv = { hue:0, acc:'', name:'Sparkle' };
-  renderBuilder('setup');
+  tempAv = { id:'maya' };
+  renderAvatarGrid('setupAvGrid', tempAv.id);
   $('#setupPanel').classList.add('show');
 }
 
 function confirmNewAdventure(){
   const name = ($('#setupName').value||'').trim() || 'Explorer';
-  const buddy = {
-    hue: tempAv.hue,
-    acc: tempAv.acc,
-    name: ($('#setupBuddyName').value||'').trim() || 'Sparkle'
-  };
+  const buddy = { id: (tempAv && tempAv.id) || 'maya' };
   const next = newAdventureSave(name, buddy);
   setSave(next);
   $('#setupPanel').classList.remove('show');
@@ -109,6 +96,8 @@ function bootWorld(){
   renderLand(key);
   applyGate();
   syncAvatar();
+  spawnWalker();
+  if(typeof initExplore==='function') initExplore();
   fitMap();
   const selected = document.querySelector(`.pill[data-key="${key}"]`);
   document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
@@ -325,7 +314,7 @@ function enterLand(key){
   });
   const ZB = 2.8;
   const bg = $('#lvBg');
-  bg.style.backgroundImage = "url('assets/map.png')";
+  bg.style.backgroundImage = "url('assets/map.jpg?v=4')";
   bg.style.backgroundSize = (1014*ZB) + 'px auto';
   bg.style.backgroundPosition = `${w/2 - c[0]*ZB}px ${h*0.5 - (c[1]-70)*ZB}px`;
   buildLandView(key);
@@ -387,7 +376,9 @@ function buildLandView(key){
   const buddy = document.createElement('div');
   buddy.className = 'buddy-wrap';
   buddy.style.left = (bx/10)+'%'; buddy.style.top = (by/5.6)+'%';
-  buddy.innerHTML = `<span class="av-wrap"><img src="assets/mascot.png?v=3" style="filter:hue-rotate(${avatar.hue}deg)"/><span class="av-acc">${avatar.acc||''}</span></span><br><span class="tag">${avatar.name}</span>`;
+  const aid = (avatar && avatar.id) || 'maya';
+  const who = (save && save.studentName) || 'You';
+  buddy.innerHTML = `<span class="av-wrap"><img src="${avatarSrc(aid)}" alt=""/></span><br><span class="tag">${who}</span>`;
   stage.appendChild(buddy);
 }
 
@@ -501,41 +492,22 @@ function afterQuestComplete(title, landKey, result){
 
 function openAvatar(){
   tempAv = Object.assign({}, avatar);
-  renderBuilder('hud');
+  renderAvatarGrid('avPickGrid', tempAv.id);
   openModal('avatarModal');
 }
 
-function renderBuilder(where){
-  const img = where==='setup' ? $('#setupPrevImg') : $('#avPrevImg');
-  const acc = where==='setup' ? $('#setupPrevAcc') : $('#avPrevAcc');
-  const sw = where==='setup' ? $('#setupSwatches') : $('#avSwatches');
-  const ac = where==='setup' ? $('#setupAccs') : $('#avAccs');
-  const name = where==='setup' ? $('#setupBuddyName') : $('#avName');
-  if(img) img.style.filter = `hue-rotate(${tempAv.hue}deg)`;
-  if(acc) acc.textContent = tempAv.acc||'';
-  if(sw) sw.innerHTML = HUES.map(h=>
-    `<div class="swatch${tempAv.hue===h.v?' sel':''}" title="${h.n}" style="background:${h.c}" onclick="tempAv.hue=${h.v};renderBuilder('${where}')"></div>`).join('');
-  if(ac) ac.innerHTML = ACCS.map(a=>
-    `<div class="acc-opt${tempAv.acc===a?' sel':''}" onclick="tempAv.acc='${a}';renderBuilder('${where}')">${a||'—'}</div>`).join('');
-  if(name && where!=='setup') name.value = tempAv.name;
-}
-
 function saveAvatar(){
-  tempAv.name = ($('#avName').value||'').trim() || 'Sparkle';
-  avatar = Object.assign({}, tempAv);
+  avatar = { id: (tempAv && tempAv.id) || 'maya' };
   if(save){ save.avatar = avatar; persist(); }
   try{ localStorage.setItem(AVATAR_KEY, JSON.stringify(avatar)); }catch(e){}
   syncAvatar();
   closeModal('avatarModal');
-  toast('✦', avatar.name + ' is ready for adventure!');
+  toast('✦', 'Avatar saved — that\'s you on the map!');
 }
 
 function syncAvatar(){
-  if(save && save.avatar) avatar = save.avatar;
-  const hud = $('#hudBuddyImg'); if(hud) hud.style.filter = `hue-rotate(${avatar.hue}deg)`;
-  const acc = $('#hudBuddyAcc'); if(acc) acc.textContent = avatar.acc||'';
-  const qb = $('#qpBuddyImg'); if(qb) qb.style.filter = `hue-rotate(${avatar.hue}deg)`;
-  const qacc = $('#qpBuddyAcc'); if(qacc) qacc.textContent = avatar.acc||'';
+  if(save && save.avatar && save.avatar.id) avatar = save.avatar;
+  if(typeof syncWalkerArt==='function') syncWalkerArt();
   if(inLand && currentLandKey) buildLandView(currentLandKey);
 }
 
@@ -586,8 +558,7 @@ function initWorld(){
     el.addEventListener('click',()=>landClick(el.dataset.lock, el));
   });
   renderTitle();
-  const existing = loadSave();
-  // Stay on title until the student chooses. Map still needs a fit.
+  if(typeof initExplore==='function') initExplore();
   fitMap();
   window.addEventListener('load', fitMap);
 }

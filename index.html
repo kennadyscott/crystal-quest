@@ -71,24 +71,57 @@
   .level-badge .lv{font-size:8.5px;font-weight:700;opacity:.9;line-height:1}
   .level-badge .num{font-size:20px;font-weight:800;line-height:1}
   .avatar-wrap{display:flex;align-items:center;gap:9px}
-  .avatar-wrap img{width:42px;height:42px;border-radius:50%;border:2.5px solid #e9d5ff}
+  .avatar-wrap img{width:42px;height:42px;border-radius:50%;border:2.5px solid #e9d5ff;object-fit:cover;object-position:center 18%}
   .avatar-wrap .who{font-weight:800;font-size:14.5px}
   .avatar-wrap .chev{color:var(--ink-soft);font-size:10px}
 
   /* ============ HERO: map as the entire background ============ */
   .hero{position:relative;flex:1;min-height:520px;overflow:hidden}
   .bg-blur{
-    position:absolute;inset:-40px;
-    background:url('assets/map.png?v=3') center/cover no-repeat;
-    filter:blur(26px) saturate(1.15) brightness(1.04);
+    position:absolute;inset:0;
+    background:url('assets/map.jpg?v=4') 0 0 / 1014px 806px no-repeat;
+    filter:blur(22px) saturate(1.12) brightness(1.05);
+    transform-origin:top left;
   }
   .map-stage{position:absolute;left:0;top:0;width:1014px;height:806px;transform-origin:top left;z-index:1;
-    transition:transform .35s cubic-bezier(.3,.9,.3,1), top .35s cubic-bezier(.3,.9,.3,1)}
+    transition:none}
+  .map-stage.zooming{transition:transform .75s cubic-bezier(.55,.05,.25,1)}
   .map-stage > img.art{position:absolute;inset:0;width:1014px;height:806px;display:block;user-select:none;-webkit-user-drag:none}
 
-  /* soft feather where sharp art meets blur */
-  .map-stage::after{content:"";position:absolute;top:0;right:-1px;width:70px;height:100%;
-    background:linear-gradient(90deg,transparent,rgba(233,222,250,.28));pointer-events:none}
+  .walker{
+    position:absolute;z-index:8;transform:translate(-50%,-90%);text-align:center;pointer-events:none;
+  }
+  .walker img{height:78px;width:auto;display:block;margin:0 auto;filter:drop-shadow(0 8px 12px rgba(20,18,50,.4))}
+  .walker.flip img{transform:scaleX(-1)}
+  .walker.moving img{animation:walkbob .28s ease-in-out infinite}
+  @keyframes walkbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .walker.flip.moving img{animation:walkbob-flip .28s ease-in-out infinite}
+  @keyframes walkbob-flip{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-5px)}}
+  .walker-name{
+    display:inline-block;margin-top:-4px;background:rgba(255,255,255,.95);border-radius:10px;
+    padding:2px 9px;font-weight:800;font-size:11px;color:var(--magenta);box-shadow:0 4px 10px rgba(30,15,60,.25);
+  }
+  .hero.zoomed .walker{opacity:0}
+
+  .explore-hint{
+    position:absolute;left:50%;bottom:118px;transform:translateX(-50%);z-index:22;
+    background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.7);
+    border-radius:999px;padding:9px 18px;font-weight:700;font-size:13.5px;color:var(--ink);
+    box-shadow:var(--shadow-sm);opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap;
+  }
+  .explore-hint.show{opacity:1}
+  .explore-hint b{color:var(--magenta)}
+
+  .av-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 4px}
+  .av-pick{
+    border:2.5px solid var(--line);border-radius:16px;background:#fff;padding:8px 6px 6px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+  }
+  .av-pick img{width:84px;height:84px;object-fit:contain}
+  .av-pick span{font-weight:800;font-size:12px;color:var(--ink)}
+  .av-pick.sel{border-color:var(--magenta);background:var(--magenta-soft);box-shadow:0 0 0 3px rgba(236,24,200,.16)}
+  .av-pick:hover{border-color:var(--crystal)}
+  .hud .mascot img{height:52px;width:52px;object-fit:cover;object-position:center 16%;border-radius:50%;background:#fff;border:2.5px solid #e9d5ff}
 
   .pill{
     position:absolute;transform:translate(-50%,-50%);z-index:5;
@@ -201,7 +234,7 @@
   .hud .rw .rn{font-weight:800;font-size:15px;line-height:1}
   .hud .rw .rl{font-size:10px;color:var(--ink-soft);font-weight:600;margin-top:1px}
   .hud .mascot{display:flex;align-items:center;gap:9px;min-width:0}
-  .hud .mascot img{height:44px;width:auto;animation:floaty 3.5s ease-in-out infinite}
+  .hud .mascot img{height:52px;width:52px;object-fit:cover;object-position:center 16%;border-radius:50%;background:#fff;border:2.5px solid #e9d5ff}
   @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
   .hud .m-t{font-weight:800;font-size:12.5px;color:var(--magenta);line-height:1.1}
   .hud .m-s{font-size:11px;color:var(--ink-soft);font-weight:600;line-height:1.3;margin-top:1px;max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -274,7 +307,8 @@
   .chip.done-chip{border-color:#bfe8d4;color:#0d7a4d;background:#effaf4}
 
   /* ============ LAND ZOOM + LAND VIEW ============ */
-  .map-stage.zooming{transition:transform .75s cubic-bezier(.55,.05,.25,1), top .75s cubic-bezier(.55,.05,.25,1)}
+  .hero{cursor:grab}
+  .hero.is-dragging{cursor:grabbing}
   .hero.zoomed .pill,.hero.zoomed .lockchip{opacity:0;pointer-events:none}
   .pill,.lockchip{transition:opacity .4s}
   .hero.zoomed .drawer,.hero.zoomed .drawer-tab,.hero.zoomed .hud{opacity:0;pointer-events:none;transition:opacity .4s}
@@ -441,7 +475,7 @@
 
   /* buddy in player */
   .qp-buddy{position:absolute;left:26px;bottom:18px;display:flex;align-items:flex-end;gap:10px;z-index:5;pointer-events:none}
-  .qp-buddy img{height:84px;animation:floaty 3s ease-in-out infinite;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
+  .qp-buddy img{height:110px;width:auto;animation:floaty 3s ease-in-out infinite;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
   .qp-bubble{background:#fff;border-radius:16px;border-bottom-left-radius:4px;padding:10px 15px;font-weight:800;font-size:13.5px;color:var(--ink);
     box-shadow:0 10px 26px rgba(0,0,0,.35);margin-bottom:34px;animation:pop .25s}
 
@@ -556,18 +590,8 @@
     <div class="setup-panel" id="setupPanel">
       <div class="av-row-l">Your name</div>
       <input class="av-name" id="setupName" maxlength="18" placeholder="Explorer" />
-      <div class="av-preview">
-        <span class="av-wrap">
-          <img id="setupPrevImg" src="assets/mascot.png?v=3" alt="" />
-          <span class="av-acc" id="setupPrevAcc"></span>
-        </span>
-      </div>
-      <div class="av-row-l">Crystal Color</div>
-      <div class="swatches" id="setupSwatches"></div>
-      <div class="av-row-l">Accessory</div>
-      <div class="accs" id="setupAccs"></div>
-      <div class="av-row-l">Buddy Name</div>
-      <input class="av-name" id="setupBuddyName" maxlength="14" placeholder="Sparkle" />
+      <div class="av-row-l">Choose your adventurer</div>
+      <div class="av-grid" id="setupAvGrid"></div>
       <button class="btn btn-primary" style="margin-top:16px" onclick="confirmNewAdventure()">Next: Shape Your Path ▶</button>
     </div>
   </div>
@@ -585,17 +609,21 @@
     <div class="level-badge"><div class="lv">Level</div><div class="num">1</div></div>
     <div class="metric"><span class="ic">🔥</span><div><div class="n" id="streakNum">1</div><div class="l">Day Streak</div></div></div>
     <button class="avatar-wrap" onclick="showTitle()" title="Switch adventure">
-      <img src="assets/avatar.png" alt="" /><span class="who" id="studentName">Explorer</span><span class="chev">▼</span>
+      <img id="topAvatarImg" src="assets/avatars/maya.png" alt="" /><span class="who" id="studentName">Explorer</span><span class="chev">▼</span>
     </button>
   </div>
 </header>
 
 <!-- ===================== HERO: full-background map ===================== -->
 <section class="hero" id="hero">
-  <div class="bg-blur"></div>
+  <div class="bg-blur" id="bgBlur"></div>
 
   <div class="map-stage" id="mapStage">
-    <img class="art" src="assets/map.png?v=3" alt="Crystal Quest world map" />
+    <img class="art" src="assets/map.jpg?v=4" alt="Crystal Quest world map" />
+    <div class="walker" id="walker">
+      <img id="walkerImg" src="assets/avatars/maya.png" alt="">
+      <div class="walker-name" id="walkerName"></div>
+    </div>
 
     <div class="pill locked" data-key="place" style="left:176px;top:318px;min-width:212px;min-height:56px;justify-content:center">
       <div class="nm">Place Value</div>
@@ -702,9 +730,8 @@
     </div>
     <div class="divider d-m"></div>
     <div class="mascot">
-      <button class="av-wrap" id="hudBuddy" title="Customize your buddy!" onclick="openAvatar()">
-        <img id="hudBuddyImg" src="assets/mascot.png?v=3" alt="Your buddy" />
-        <span class="av-acc" id="hudBuddyAcc"></span>
+      <button class="av-wrap" id="hudBuddy" title="Change your avatar" onclick="openAvatar()">
+        <img id="hudBuddyImg" src="assets/avatars/maya.png" alt="Your avatar" />
       </button>
       <div style="min-width:0">
         <div class="m-t" id="hudBuddyLine">Keep going!</div>
@@ -715,6 +742,7 @@
     <button class="chip pulse" id="asgChip" onclick="openAsgFromChip()">📜 New Assignment <span class="b1" id="asgBadge">1</span></button>
     <button class="btn btn-primary" onclick="openModal('diagModal')">💎 Take Diagnostic</button>
   </div>
+  <div class="explore-hint" id="exploreHint">Arrow keys to walk · Drag to look around</div>
 </section>
 
 <!-- ===================== QUEST PLAYER ===================== -->
@@ -731,8 +759,7 @@
   <div class="qp-body" id="qpBody"></div>
   <div class="qp-buddy">
     <span class="av-wrap">
-      <img id="qpBuddyImg" src="assets/mascot.png?v=3" alt="" />
-      <span class="av-acc" id="qpBuddyAcc"></span>
+      <img id="qpBuddyImg" src="assets/avatars/maya.png" alt="" />
     </span>
     <div class="qp-bubble" id="qpBubble">Let's do this!</div>
   </div>
@@ -823,24 +850,14 @@
 <div class="modal-scrim" id="avatarModal" onclick="if(event.target===this)closeModal('avatarModal')">
   <div class="modal" style="max-width:480px">
     <div class="mh">
-      <div class="kick">Your Adventure Buddy</div>
-      <h2>Build Your Buddy!</h2>
+      <div class="kick">You on the map</div>
+      <h2>Choose Your Avatar</h2>
       <div class="x" onclick="closeModal('avatarModal')">✕</div>
     </div>
     <div class="mb">
-      <div class="av-preview">
-        <span class="av-wrap">
-          <img id="avPrevImg" src="assets/mascot.png?v=3" alt="" />
-          <span class="av-acc" id="avPrevAcc"></span>
-        </span>
-      </div>
-      <div class="av-row-l">Crystal Color</div>
-      <div class="swatches" id="avSwatches"></div>
-      <div class="av-row-l">Accessory</div>
-      <div class="accs" id="avAccs"></div>
-      <div class="av-row-l">Buddy Name</div>
-      <input class="av-name" id="avName" maxlength="14" placeholder="Sparkle" />
-      <button class="btn btn-primary" style="margin-top:18px" onclick="saveAvatar()">Save My Buddy ✦</button>
+      <p>This is who walks the Crystal Isles. Pick one — you can change anytime.</p>
+      <div class="av-grid" id="avPickGrid"></div>
+      <button class="btn btn-primary" style="margin-top:18px" onclick="saveAvatar()">That's me ✦</button>
     </div>
   </div>
 </div>
@@ -879,6 +896,7 @@
 <script src="js/state.js"></script>
 <script src="js/player.js"></script>
 <script src="js/diag.js"></script>
+<script src="js/explore.js"></script>
 <script src="js/world.js"></script>
 </body>
 </html>
