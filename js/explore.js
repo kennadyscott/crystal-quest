@@ -67,7 +67,11 @@ function closestOnSeg(px,py,ax,ay,bx,by){
 function activePaths(){
   if(typeof inLand!=='undefined' && inLand && currentLandKey && LANDS[currentLandKey]){
     const L = LANDS[currentLandKey];
-    if(L.paths) return L.paths;
+    if(L.paths){
+      const open = typeof landGateOpen==='function' ? landGateOpen(currentLandKey) : true;
+      if(L.gateAfter && !open) return L.paths.slice(0, L.pathsOpen || L.gateAfter);
+      return L.paths;
+    }
     if(L.path) return [L.path];
   }
   return PATHS;
@@ -250,9 +254,13 @@ function updateExploreHint(){
   if(inLand){
     const at = nearestQuest();
     if(at){
-      hint.innerHTML = at.st==='lock'
-        ? `🔒 Conquer the earlier side-quests first`
-        : `↵  ${at.st==='done'?'Replay':'Play'} <b>${at.q.name}</b>`;
+      const L = LANDS[currentLandKey];
+      const partLocked = L.gateAfter && at.i >= L.gateAfter && !landGateOpen(currentLandKey);
+      hint.innerHTML = partLocked
+        ? `🔒 Master 3 shrines to open this part of the island`
+        : (at.st==='lock'
+          ? `🔒 Conquer the side-quests in order`
+          : `↵  ${at.st==='done'?'Replay':'Play'} <b>${at.q.name}</b>`);
       hint.classList.add('show');
     } else {
       hint.innerHTML = 'Walk to a side-quest · <b>World Map</b> to leave';
@@ -283,8 +291,13 @@ function tryEnterHere(){
   if(inLand){
     const at = nearestQuest();
     if(!at) return;
+    const L = LANDS[currentLandKey];
+    if(L.gateAfter && at.i >= L.gateAfter && !landGateOpen(currentLandKey)){
+      toast('🔒','Master the first 3 shrines to open this part of the island.');
+      return;
+    }
     if(at.st==='lock' && !isAssigned(at.q.name, currentLandKey)){
-      toast('🔒','Conquer the side-quests before it first!');
+      toast('🔒','Conquer the side-quests in order!');
       return;
     }
     openQuest(at.q.name, LANDS[currentLandKey].title, currentLandKey, 0, at.st);

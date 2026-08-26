@@ -402,9 +402,16 @@ function buildLandView(key){
   const allDone = stats.allDone;
   $('#lvCount').textContent = stats.done + ' / ' + stats.total;
   $('#lvBar').style.width = Math.round(stats.done/stats.total*100) + '%';
-  $('#lvSub').textContent = allDone
-    ? 'You conquered this land — every side-quest mastered!'
-    : 'Conquer every side-quest to claim this land.';
+  const gated = L.gateAfter && !landGateOpen(key);
+  if(allDone){
+    $('#lvSub').textContent = 'You conquered this land — every side-quest mastered!';
+  } else if(gated){
+    $('#lvSub').textContent = 'Master the first 3 shrines to open the rest of the island.';
+  } else if(L.gateAfter){
+    $('#lvSub').textContent = 'The rest of the island is open — finish the remaining shrines.';
+  } else {
+    $('#lvSub').textContent = 'Conquer every side-quest to claim this land.';
+  }
   $('#lvBanner').style.display = allDone ? 'block' : 'none';
 
   const nodes = landNodes(key);
@@ -412,17 +419,22 @@ function buildLandView(key){
     let st = questStatus(q.name);
     if(isAssigned(q.name, key) && st==='lock') st = 'prog';
     const xy = nodes[i] || L.center;
+    const partLocked = L.gateAfter && i >= L.gateAfter && !landGateOpen(key);
     const el = document.createElement('div');
-    el.className = 'qsite ' + (st==='prog' ? 'cur' : st);
+    el.className = 'qsite ' + (st==='prog' ? 'cur' : st) + (partLocked ? ' gated' : '');
     el.style.left = xy[0]+'px';
     el.style.top = xy[1]+'px';
     el.dataset.q = q.name;
     const label = q.short || q.name;
-    el.innerHTML = `${qsiteMark(st)}<span class="copy"><span class="num">${i+1} / ${L.quests.length}</span><span class="nm">${label}</span></span>`;
+    el.innerHTML = `${qsiteMark(partLocked ? 'lock' : st)}<span class="copy"><span class="num">${i+1} / ${L.quests.length}</span><span class="nm">${label}</span></span>`;
     el.addEventListener('click', ev => {
       ev.stopPropagation();
+      if(partLocked){
+        toast('🔒','Master the first 3 shrines to open this part of the island.');
+        return;
+      }
       if(st==='lock' && !isAssigned(q.name, key)){
-        toast('🔒','Conquer the side-quests before it first!');
+        toast('🔒','Conquer the side-quests in order: next up is '+(L.quests.find(x=>questStatus(x.name)!=='done')||q).name+'.');
         return;
       }
       openQuest(q.name, L.title, key, 0, st);
@@ -540,6 +552,11 @@ function afterQuestComplete(title, landKey, result){
   if(inLand && currentLandKey===landKey) buildLandView(landKey);
   refreshHUD();
   toast('✅', title+' conquered!');
+  const L = LANDS[landKey];
+  if(L && L.gateAfter && L.quests[L.gateAfter-1] && L.quests[L.gateAfter-1].name===title && landGateOpen(landKey) && !result.justConquered){
+    toast('🗺️','The rest of the island is open!');
+    sfx('unlock');
+  }
   if(result.justConquered){
     setTimeout(()=>{
       toast('👑','LAND CONQUERED: '+LANDS[landKey].title+'! +100 XP');

@@ -287,14 +287,24 @@ function unlockLand(key, opts){
   return true;
 }
 
+function landGateOpen(key){
+  const L = LANDS[key];
+  if(!L || !L.gateAfter) return true;
+  return L.quests.slice(0, L.gateAfter).every(q => questStatus(q.name)==='done');
+}
+
 function applyIslandDiagnostic(key, correct, total){
   const names = LANDS[key].quests.map(q=>q.name);
   names.forEach(n => setQuestStatus(n, 'lock'));
+  const L = LANDS[key];
   const ratio = total ? correct/total : 0;
   let skip = 0;
-  if(ratio >= .8) skip = 3;
-  else if(ratio >= .6) skip = 2;
-  else if(ratio >= .4) skip = 1;
+  if(!L.noSkip){
+    if(ratio >= .8) skip = 3;
+    else if(ratio >= .6) skip = 2;
+    else if(ratio >= .4) skip = 1;
+    if(L.gateAfter) skip = Math.min(skip, L.gateAfter - 1);
+  }
   for(let i=0;i<skip;i++) setQuestStatus(names[i], 'done');
   const start = names[Math.min(skip, names.length-1)];
   setQuestStatus(start, 'prog');
