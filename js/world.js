@@ -70,8 +70,8 @@ function confirmNewAdventure(){
   const next = newAdventureSave(name, buddy);
   setSave(next);
   $('#setupPanel').classList.remove('show');
-  renderTitle();
-  openModal('diagModal');
+  hideTitle();
+  bootWorld();
 }
 
 function playMayaShowcase(){
@@ -290,9 +290,11 @@ function landClick(key, el){
       setTimeout(()=>openQuest(asg.title, LANDS[key].title, key, 0, 'prog'), 600);
       return;
     }
-    const req = LAND_REQUIRES[key];
-    const name = req ? LANDS[req].title : 'the lands before it';
-    toast('🔒',`Conquer ${name} to unlock this land!`);
+    if(!canUnlockLand(key)){
+      toast('🔒','You can have 2 lands in progress. Master one to open another!');
+      return;
+    }
+    openIslandDiag(key);
     return;
   }
   document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));

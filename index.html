@@ -737,7 +737,7 @@
     </div>
     <div class="spacer"></div>
     <button class="chip pulse" id="asgChip" onclick="openAsgFromChip()">📜 New Assignment <span class="b1" id="asgBadge">1</span></button>
-    <button class="btn btn-primary" onclick="openModal('diagModal')">💎 Take Diagnostic</button>
+    <button class="btn btn-primary" onclick="openModal('diagModal')">💎 Practice Check</button>
   </div>
   <div class="explore-hint" id="exploreHint">Arrow keys to walk · Drag to look around</div>
 </section>
@@ -796,7 +796,7 @@
       <div class="x" onclick="closeModal('diagModal')">✕</div>
     </div>
     <div class="mb">
-      <p>A short, adaptive check across all six lands. Crystal Quest uses your results to <b>unlock the right lands</b> and line up the quests that will help you grow the fastest — your own personal path.</p>
+      <p>A quick practice check across the six lands. Unlocking a land still happens on the map: walk to an island and take <b>that land's diagnostic</b>.</p>
       <div class="path" style="justify-content:flex-start;gap:18px">
         <div class="pstep" style="flex:none;width:auto"><div class="pball">🧭</div><div class="plbl">~15 min</div></div>
         <div class="pstep" style="flex:none;width:auto"><div class="pball">🎯</div><div class="plbl">Adaptive</div></div>
@@ -867,9 +867,9 @@
       <h2>Ready to explore?</h2>
     </div>
     <div class="mb">
-      <p>Use the <b>arrow keys</b> (or WASD) to walk. The map will zoom in once you start moving.</p>
-      <p>Walk up to a land and press <b>Enter</b> to go inside — or click a label.</p>
-      <p style="margin-bottom:18px">Drag the water to look around.</p>
+      <p>Use the <b>arrow keys</b> (or WASD) to walk the paths — you can't walk on the water.</p>
+      <p>Walk up to a locked island and press <b>Enter</b> to take a short diagnostic. That unlocks the land and sets your quest path.</p>
+      <p style="margin-bottom:18px">You can explore <b>2 lands</b> at a time. Master one (finish every quest) to open a third.</p>
       <button class="btn btn-primary" onclick="dismissExploreIntro()">Let's go ✦</button>
     </div>
   </div>

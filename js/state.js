@@ -74,8 +74,6 @@ function defaultAvatar(){
 
 function newAdventureSave(studentName, avatar){
   const quests = emptyQuestLog();
-  const first = LANDS.place.quests[0].name;
-  quests[first].status = 'prog';
   return {
     version: 1,
     studentName: studentName || 'Explorer',
@@ -86,8 +84,8 @@ function newAdventureSave(studentName, avatar){
     lastPlayed: todayStr(),
     mode: 'adventure',
     assignment: null,
-    diagnostic: { taken:false, scores:{}, skipped:false },
-    lands: { place:'open', mult:'locked', dec:'locked', frac:'locked', geo:'locked', data:'locked' },
+    diagnostic: { taken:false, scores:{}, skipped:false, islands:{} },
+    lands: { place:'locked', mult:'locked', dec:'locked', frac:'locked', geo:'locked', data:'locked' },
     quests,
     badges: [],
     treasures: []
@@ -249,8 +247,20 @@ function awardTreasure(id, silent){
   }
 }
 
+function openLandCount(){
+  if(!save) return 0;
+  return LAND_KEYS.filter(k => save.lands[k]==='open').length;
+}
+
+function canUnlockLand(key){
+  if(!save) return false;
+  if(save.lands[key]!=='locked') return true;
+  return openLandCount() < 2;
+}
+
 function unlockLand(key, opts){
   if(!save || save.lands[key]!=='locked') return false;
+  if(!canUnlockLand(key)) return false;
   save.lands[key] = 'open';
   const first = LANDS[key].quests[0].name;
   if(questStatus(first)==='lock') setQuestStatus(first, 'prog');
@@ -259,15 +269,31 @@ function unlockLand(key, opts){
   return true;
 }
 
+function applyIslandDiagnostic(key, correct, total){
+  const names = LANDS[key].quests.map(q=>q.name);
+  names.forEach(n => setQuestStatus(n, 'lock'));
+  const ratio = total ? correct/total : 0;
+  let skip = 0;
+  if(ratio >= .8) skip = 3;
+  else if(ratio >= .6) skip = 2;
+  else if(ratio >= .4) skip = 1;
+  for(let i=0;i<skip;i++) setQuestStatus(names[i], 'done');
+  const start = names[Math.min(skip, names.length-1)];
+  setQuestStatus(start, 'prog');
+  save.lands[key] = 'open';
+  save.diagnostic = save.diagnostic || {};
+  save.diagnostic.islands = save.diagnostic.islands || {};
+  save.diagnostic.islands[key] = { correct, total };
+  persist();
+  if(typeof onLandUnlocked==='function') onLandUnlocked(key, {});
+}
+
 function conquerLand(key){
   save.lands[key] = 'conquered';
   awardTreasure('crystal-'+key);
   awardBadge('land-'+key);
   if(LAND_KEYS.every(k => save.lands[k]==='conquered')) awardBadge('all-crystals');
   persist();
-  (LAND_UNLOCKS[key]||[]).forEach(next => {
-    if(save.lands[next]==='locked') unlockLand(next);
-  });
 }
 
 function applyQuestComplete(title, landKey, result){
@@ -282,7 +308,7 @@ function applyQuestComplete(title, landKey, result){
   if(save.assignment && save.assignment.title===title){
     save.assignment.done = true;
     const req = LAND_REQUIRES[landKey];
-    if(save.lands[landKey]==='locked' && (!req || save.lands[req]==='conquered')){
+    if(save.lands[landKey]==='locked' && canUnlockLand(landKey)){
       unlockLand(landKey);
     }
   }

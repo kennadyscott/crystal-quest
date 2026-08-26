@@ -1,5 +1,63 @@
 /* Crystal Quest — pan, walk, camera follow */
 const MAP_W = 1014, MAP_H = 806;
+const PATH_SNAP = 28;
+/* Wooden / sand paths matching the painted map (map-pixel coords). */
+const PATHS = [
+  // Place Value trail
+  [[215,400],[200,355],[188,310],[176,270],[168,230]],
+  // Causeway place → hub → purple shore
+  [[215,400],[255,425],[320,445],[390,455],[460,465],[510,470]],
+  // Hub down to Fractions
+  [[320,445],[280,500],[230,545],[195,590],[184,630]],
+  // Fractions beach loop
+  [[184,630],[155,600],[165,570],[190,600]],
+  // Fractions → Geometry
+  [[200,645],[270,665],[350,685],[430,700],[490,705]],
+  // Geometry loop
+  [[490,705],[520,670],[500,640],[470,660]],
+  // Geometry → Data stepping stones
+  [[520,700],[600,685],[690,660],[770,635],[830,610],[855,585]],
+  // Data trail
+  [[855,585],[860,545],[845,520]],
+  // Purple island climb
+  [[510,470],[545,440],[560,390],[552,340],[548,300],[560,255]],
+  // Purple → Decimals bridge
+  [[600,355],[680,345],[760,330],[840,315],[880,300]],
+  // Decimals trail
+  [[880,300],[900,275],[860,265]]
+];
+
+function closestOnSeg(px,py,ax,ay,bx,by){
+  const abx=bx-ax, aby=by-ay;
+  const den=abx*abx+aby*aby || 1;
+  const t=Math.max(0, Math.min(1, ((px-ax)*abx+(py-ay)*aby)/den));
+  const x=ax+t*abx, y=ay+t*aby;
+  return { x, y, t, d:Math.hypot(px-x, py-y) };
+}
+
+function snapToPath(px, py){
+  let best=null;
+  PATHS.forEach(poly => {
+    for(let i=0;i<poly.length-1;i++){
+      const a=poly[i], b=poly[i+1];
+      const p=closestOnSeg(px,py,a[0],a[1],b[0],b[1]);
+      if(!best || p.d<best.d) best=p;
+    }
+  });
+  return best;
+}
+
+function tryWalkOnPath(dx, dy){
+  const nx=walker.x+dx, ny=walker.y+dy;
+  const snap=snapToPath(nx, ny);
+  if(!snap) return false;
+  const along=(snap.x-walker.x)*dx + (snap.y-walker.y)*dy;
+  if(snap.d <= PATH_SNAP && along >= -0.4){
+    walker.x=snap.x; walker.y=snap.y;
+    return true;
+  }
+  return false;
+}
 const AVATARS = [
   { id:'mai',    label:'Mai' },
   { id:'imani',  label:'Imani' },
@@ -126,7 +184,9 @@ function updateExploreHint(){
     const L = LANDS[key];
     const locked = save && save.lands[key]==='locked';
     hint.innerHTML = locked
-      ? `🔒 ${L.title} is still locked`
+      ? (canUnlockLand(key)
+        ? `↵  Diagnostic to unlock <b>${L.title}</b>`
+        : `🔒 Master a land first — only 2 at a time`)
       : `↵  Enter the Land of <b>${L.title}</b>`;
     hint.classList.add('show');
   } else if(camMode==='overview'){
@@ -149,8 +209,13 @@ function spawnWalker(){
   const t = (typeof continueTarget==='function' && save) ? continueTarget() : null;
   const key = t ? t.key : 'place';
   const c = LANDS[key].center;
-  walker.x = c[0];
-  walker.y = c[1] + 42;
+  if(t && save && save.lands[t.key]!=='locked'){
+    walker.x = c[0];
+    walker.y = c[1] + 42;
+  } else {
+    walker.x = 390;
+    walker.y = 455;
+  }
   walker.facing = 1;
   walker.moving = false;
   walker.frame = 0;
@@ -196,13 +261,14 @@ function exploreTick(){
   if(dx || dy){
     beginFollow();
     const len = Math.hypot(dx, dy) || 1;
-    walker.x += (dx/len) * 2.6;
-    walker.y += (dy/len) * 2.6;
+    const step = 3.1;
+    const moved = tryWalkOnPath((dx/len)*step, (dy/len)*step);
     if(dx) walker.facing = dx < 0 ? -1 : 1;
-    walker.moving = true;
-    walker.frameT += 1;
-    if(walker.frameT >= 7){ walker.frameT = 0; walker.frame++; }
-    clampWalker();
+    walker.moving = !!moved;
+    if(moved){
+      walker.frameT += 1;
+      if(walker.frameT >= 7){ walker.frameT = 0; walker.frame++; }
+    }
     mapCam.x += (walker.x - mapCam.x) * 0.14;
     mapCam.y += (walker.y - mapCam.y) * 0.14;
     applyCamera(true);
