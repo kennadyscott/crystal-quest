@@ -69,9 +69,17 @@ function avatarSrc(id, frame){
   const ok = AVATARS.some(a => a.id===id);
   const who = ok?id:'mai';
   const file = frame ? (who+'-'+frame+'.png') : (who+'.png');
-  return 'assets/avatars/' + file + '?v=4';
+  return 'assets/avatars/' + file + '?v=5';
 }
 function avatarOf(id){ return AVATARS.find(a => a.id===id) || AVATARS[0]; }
+const WALK_FRAMES = ['walk-1','walk-2','walk-3','walk-4'];
+const preloadedWalk = {};
+function preloadWalk(id){
+  const who = (AVATARS.some(a => a.id===id) ? id : 'mai');
+  if(preloadedWalk[who]) return;
+  preloadedWalk[who] = true;
+  WALK_FRAMES.forEach(f => { const im = new Image(); im.src = avatarSrc(who, f); });
+}
 
 let mapCam = { x: MAP_W/2, y: MAP_H/2, scale: 1 };
 let camMode = 'overview'; // overview until first walk, then follow
@@ -81,7 +89,6 @@ let exploreRaf = 0;
 let exploreBound = false;
 let suppressClick = false;
 const held = {};
-const WALK_ORDER = [null, 'walk-a', null, 'walk-b']; // idle, L, idle, R
 
 function exploreBusy(){
   if(inLand) return true;
@@ -160,7 +167,7 @@ function placeWalker(){
   const img = $('#walkerImg');
   if(img){
     const id = (save && save.avatar && save.avatar.id) || (avatar && avatar.id) || 'mai';
-    const pose = walker.moving ? WALK_ORDER[walker.frame % WALK_ORDER.length] : null;
+    const pose = walker.moving ? WALK_FRAMES[walker.frame % WALK_FRAMES.length] : null;
     const next = avatarSrc(id, pose);
     if(img.dataset.pose !== next){ img.src = next; img.dataset.pose = next; }
   }
@@ -229,6 +236,7 @@ function spawnWalker(){
 
 function syncWalkerArt(){
   const id = (save && save.avatar && save.avatar.id) || (avatar && avatar.id) || 'mai';
+  preloadWalk(id);
   const src = avatarSrc(id);
   const w = $('#walkerImg'); if(w){ w.src = src; w.dataset.pose = src; }
   const n = $('#walkerName'); if(n) n.textContent = (save && save.studentName) || '';
@@ -266,7 +274,7 @@ function exploreTick(){
     walker.moving = !!moved;
     if(moved){
       walker.frameT += 1;
-      if(walker.frameT >= 7){ walker.frameT = 0; walker.frame++; }
+      if(walker.frameT >= 6){ walker.frameT = 0; walker.frame++; }
     }
     mapCam.x += (walker.x - mapCam.x) * 0.14;
     mapCam.y += (walker.y - mapCam.y) * 0.14;
