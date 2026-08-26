@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Crystal Quest — Your Adventure Awaits</title>
+<link rel="icon" type="image/png" href="assets/logo-mark.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --magenta:#e8148b;
+    --magenta-deep:#c40a74;
+    --magenta-soft:#fde6f2;
+    --crystal:#7b2ff7;
+    --crystal-deep:#5b21b6;
+    --crystal-soft:#f0e6ff;
+    --indigo:#2f6fdc;
+    --emerald:#22b573;
+    --emerald-soft:#e4f7ef;
+    --ink:#241a3a;
+    --ink-soft:#6a6386;
+    --line:#eee9f6;
+    --glass:rgba(255,255,255,.9);
+    --shadow:0 18px 50px rgba(60,30,110,.22);
+    --shadow-sm:0 4px 16px rgba(60,30,110,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    font-family:'Baloo 2','Inter',system-ui,sans-serif;
+    color:var(--ink);background:#e9defa;
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  h1,h2,h3,h4{margin:0}
+
+  /* ============ TOP BAR ============ */
+  .topbar{
+    display:flex;align-items:center;gap:20px;flex:none;
+    padding:8px 24px;background:#fff;
+    border-bottom:1px solid var(--line);
+    position:relative;z-index:60;
+  }
+  .brand{display:flex;align-items:center}
+  .brand .lockup{height:50px;width:auto;display:block}
+  .nav-pill{
+    margin-left:14px;display:flex;align-items:center;gap:9px;
+    padding:10px 22px;border-radius:15px;font-weight:700;font-size:14.5px;
+    color:var(--magenta);background:#fff;border:1.5px solid #f3cfe4;box-shadow:var(--shadow-sm);
+  }
+  .spacer{flex:1}
+  .metric-strip{display:flex;align-items:center;gap:14px}
+  .metric{display:flex;align-items:center;gap:8px}
+  .metric img{height:32px;width:auto}
+  .metric .ic{font-size:22px;line-height:1}
+  .metric .n{font-weight:800;font-size:15.5px;line-height:1.05}
+  .metric .l{font-size:10.5px;font-weight:600;color:var(--ink-soft)}
+  .level-badge{
+    width:50px;height:56px;display:grid;place-items:center;align-content:center;
+    background:linear-gradient(160deg,#8f45ff,#6222c9);
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    color:#fff;
+  }
+  .level-badge .lv{font-size:8.5px;font-weight:700;opacity:.9;line-height:1}
+  .level-badge .num{font-size:20px;font-weight:800;line-height:1}
+  .avatar-wrap{display:flex;align-items:center;gap:9px}
+  .avatar-wrap img{width:42px;height:42px;border-radius:50%;border:2.5px solid #e9d5ff}
+  .avatar-wrap .who{font-weight:800;font-size:14.5px}
+  .avatar-wrap .chev{color:var(--ink-soft);font-size:10px}
+
+  /* ============ HERO: map as the entire background ============ */
+  .hero{position:relative;flex:1;min-height:520px;overflow:hidden}
+  .bg-blur{
+    position:absolute;inset:-40px;
+    background:url('assets/map.png') center/cover no-repeat;
+    filter:blur(26px) saturate(1.15) brightness(1.04);
+  }
+  .map-stage{position:absolute;left:0;top:0;width:1014px;height:806px;transform-origin:top left;z-index:1;
+    transition:transform .35s cubic-bezier(.3,.9,.3,1), top .35s cubic-bezier(.3,.9,.3,1)}
+  .map-stage > img.art{position:absolute;inset:0;width:1014px;height:806px;display:block;user-select:none;-webkit-user-drag:none}
+
+  /* soft feather where sharp art meets blur */
+  .map-stage::after{content:"";position:absolute;top:0;right:-1px;width:70px;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(233,222,250,.28));pointer-events:none}
+
+  .pill{
+    position:absolute;transform:translate(-50%,-50%);z-index:5;
+    display:flex;align-items:center;gap:10px;background:#fff;
+    border-radius:16px;padding:11px 20px;cursor:pointer;white-space:nowrap;
+    box-shadow:0 8px 22px rgba(40,20,80,.28);
+    transition:box-shadow .15s ease, filter .15s ease;
+  }
+  .pill:hover{filter:brightness(1.03);box-shadow:0 12px 28px rgba(40,20,80,.36)}
+  .pill .check{width:30px;height:30px;border-radius:50%;background:var(--emerald);color:#fff;display:grid;place-items:center;font-size:15px;font-weight:800}
+  .pill .nm{font-weight:800;font-size:17px;color:var(--ink)}
+  .pill.locked .nm{color:#4a4360}
+  .pill.active-land{border:2px solid #f3a8d3;border-radius:18px;padding:10px 22px;display:block;text-align:left}
+  .pill.active-land .nm{color:var(--magenta);font-size:17.5px}
+  .pill.active-land .sub{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-soft);font-weight:600;margin-top:3px}
+  .pill.active-land .bar{width:86px;height:8px;border-radius:5px;background:#eadff2;overflow:hidden;display:inline-block}
+  .pill.active-land .bar i{display:block;height:100%;border-radius:5px;background:var(--magenta)}
+  .pill.selected{box-shadow:0 0 0 3px rgba(123,47,247,.5),0 12px 28px rgba(40,20,80,.36)}
+  .lockchip{
+    position:absolute;transform:translate(-50%,-50%);z-index:5;
+    width:56px;height:56px;border-radius:16px;background:#fff;display:grid;place-items:center;
+    box-shadow:0 8px 20px rgba(40,20,80,.26);cursor:pointer;font-size:22px;color:#4a4360;
+  }
+
+  /* ============ QUEST DRAWER (floating glass) ============ */
+  .drawer{
+    position:absolute;top:16px;right:16px;bottom:104px;width:362px;z-index:20;
+    background:var(--glass);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.7);border-radius:22px;box-shadow:var(--shadow);
+    display:flex;flex-direction:column;min-height:0;
+    transition:transform .35s cubic-bezier(.3,.9,.3,1), opacity .3s;
+  }
+  .drawer.collapsed{transform:translateX(calc(100% + 40px));opacity:0;pointer-events:none}
+  .drawer .hd{display:flex;align-items:center;gap:10px;padding:15px 16px 4px;flex:none}
+  .drawer .hd .ci{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-size:17px;flex:none;
+    background:linear-gradient(140deg,#f0148f,#c026d3);color:#fff}
+  .drawer .hd h3{font-weight:800;font-size:17px}
+  .drawer .hd .min{margin-left:auto;width:30px;height:30px;border-radius:10px;background:rgba(36,26,58,.06);display:grid;place-items:center;font-size:14px;color:var(--ink-soft)}
+  .drawer .hd .min:hover{background:rgba(36,26,58,.12)}
+  .drawer .assignee{font-size:12.5px;color:var(--ink-soft);font-weight:600;padding:0 16px 2px;flex:none}
+  .qlist{list-style:none;margin:4px 0 0;padding:0 10px;flex:1;min-height:0;overflow-y:auto;
+    display:flex;flex-direction:column;justify-content:space-evenly}
+  .qrow{display:flex;align-items:center;gap:11px;padding:8px 8px;border-radius:12px;transition:background .12s}
+  .qrow:hover{background:rgba(250,247,255,.9);cursor:pointer}
+  .qrow .qn{width:26px;height:26px;flex:none;border-radius:50%;background:#f0ecfa;color:var(--crystal-deep);
+    font-weight:800;font-size:13px;display:grid;place-items:center}
+  .qrow .qic{width:28px;flex:none;text-align:center;font-size:16px;font-weight:800}
+  .qrow .qnm{font-weight:700;font-size:14.5px;flex:1}
+  .qrow .qtag{font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:20px}
+  .qrow.done .qn{background:var(--emerald);color:#fff}
+  .qrow.done .qmark{color:var(--emerald);font-size:17px;font-weight:800}
+  .qrow.prog .qn{background:var(--magenta);color:#fff}
+  .qrow.prog{background:rgba(255,245,250,.95)}
+  .qrow.prog .qtag{background:var(--magenta-soft);color:var(--magenta)}
+  .qrow.lock .qnm{color:var(--ink-soft)}
+  .qrow.lock .qmark{color:#c3bad9}
+
+  .btn{font-weight:800;font-size:15.5px;padding:12px;border-radius:15px;
+    display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s ease, box-shadow .12s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:linear-gradient(135deg,#f0148f,#e8148b);color:#fff;box-shadow:0 8px 20px rgba(232,20,139,.32)}
+  .btn-primary:hover{box-shadow:0 12px 26px rgba(232,20,139,.44)}
+  .btn-ghost{background:#fff;color:var(--crystal);border:1.5px solid #e3d3fb}
+  .btn-ghost:hover{background:var(--crystal-soft)}
+  .drawer .btn-primary{margin:10px 12px 2px;flex:none}
+
+  .journey-footer{
+    margin:10px 12px 12px;border-radius:16px;padding:11px 13px;flex:none;
+    background:linear-gradient(150deg,#31205c,#5b21b6);color:#fff;
+    display:flex;align-items:center;gap:12px;
+  }
+  .journey-footer img{width:48px;height:auto;flex:none;border-radius:11px}
+  .journey-footer .jt{font-weight:800;font-size:13px;line-height:1.15}
+  .journey-footer .js{font-size:11px;opacity:.8;font-weight:600;margin-top:2px}
+  .journey-footer .jbar{height:6px;border-radius:5px;background:rgba(255,255,255,.22);margin-top:6px;overflow:hidden}
+  .journey-footer .jbar i{display:block;height:100%;width:67%;background:linear-gradient(90deg,#ff4da6,#ffd166);border-radius:5px}
+  .journey-footer .go{width:32px;height:32px;flex:none;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:15px;color:#fff}
+  .journey-footer .go:hover{background:rgba(255,255,255,.3)}
+
+  /* collapsed-drawer tab */
+  .drawer-tab{
+    position:absolute;top:24px;right:16px;z-index:19;
+    display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:16px;
+    background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.7);
+    box-shadow:var(--shadow-sm);font-weight:800;font-size:14.5px;color:var(--crystal-deep);
+    opacity:0;pointer-events:none;transition:opacity .3s .1s;
+  }
+  .drawer-tab.show{opacity:1;pointer-events:auto}
+  .drawer-tab:hover{background:#fff}
+  .drawer-tab .b1{width:20px;height:20px;border-radius:50%;background:var(--magenta);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+
+  /* ============ BOTTOM HUD ============ */
+  .hud{
+    position:absolute;left:16px;right:16px;bottom:14px;z-index:21;
+    display:flex;align-items:center;gap:18px;
+    background:var(--glass);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.7);border-radius:20px;box-shadow:var(--shadow);
+    padding:10px 18px;
+  }
+  .hud .cluster{display:flex;align-items:center;gap:10px}
+  .hud .divider{width:1px;height:40px;background:rgba(36,26,58,.1)}
+  .ring{width:52px;height:52px;flex:none;position:relative}
+  .ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:13px;color:var(--ink)}
+  .hud .pl{font-weight:800;font-size:13px;color:var(--crystal-deep)}
+  .hud .ps{font-size:11.5px;color:var(--ink-soft);font-weight:600;margin-top:1px}
+  .hud .rw{display:flex;align-items:center;gap:7px}
+  .hud .rw img{height:32px;width:auto}
+  .hud .rw .rn{font-weight:800;font-size:15px;line-height:1}
+  .hud .rw .rl{font-size:10px;color:var(--ink-soft);font-weight:600;margin-top:1px}
+  .hud .mascot{display:flex;align-items:center;gap:9px;min-width:0}
+  .hud .mascot img{height:44px;width:auto;animation:floaty 3.5s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .hud .m-t{font-weight:800;font-size:12.5px;color:var(--magenta);line-height:1.1}
+  .hud .m-s{font-size:11px;color:var(--ink-soft);font-weight:600;line-height:1.3;margin-top:1px;max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hud .chip{
+    display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:14px;
+    background:#fff;border:1.5px solid #e9ddfb;font-weight:800;font-size:13.5px;color:var(--crystal-deep);
+    box-shadow:var(--shadow-sm);position:relative;
+  }
+  .hud .chip:hover{border-color:var(--crystal)}
+  .hud .chip .b1{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;
+    background:var(--magenta);color:#fff;font-size:11px;display:grid;place-items:center;box-shadow:0 3px 8px rgba(232,20,139,.4)}
+  .hud .btn-primary{padding:11px 20px;font-size:14px;border-radius:14px}
+
+  /* ============ TOAST + MODALS ============ */
+  .toast-wrap{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none}
+  .toast{background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:12px 20px;border-radius:14px;box-shadow:0 14px 34px rgba(0,0,0,.3);
+    display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(14px);transition:all .28s cubic-bezier(.2,.8,.3,1)}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast .ti{font-size:18px}
+
+  .modal-scrim{position:fixed;inset:0;background:rgba(30,15,60,.55);backdrop-filter:blur(4px);z-index:150;display:none;place-items:center;padding:24px}
+  .modal-scrim.open{display:grid}
+  .modal{background:#fff;border-radius:24px;max-width:560px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.4);overflow:hidden;animation:pop .3s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal .mh{padding:22px 26px;background:linear-gradient(135deg,var(--crystal),var(--magenta));color:#fff;position:relative}
+  .modal .mh .kick{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;opacity:.9}
+  .modal .mh h2{font-size:27px;font-weight:800;margin-top:4px}
+  .modal .mh .x{position:absolute;top:18px;right:20px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:18px;display:grid;place-items:center}
+  .modal .mh .x:hover{background:rgba(255,255,255,.34)}
+  .modal .mb{padding:24px 26px 28px}
+  .modal .mb p{color:var(--ink-soft);font-size:14px;font-weight:600;line-height:1.6;margin:0 0 18px}
+  .modal .btn{width:100%}
+  .path{display:flex;align-items:stretch;justify-content:space-between;gap:8px;margin:6px 0 22px}
+  .pstep{flex:1;text-align:center;position:relative}
+  .pstep .pball{width:52px;height:52px;margin:0 auto;border-radius:16px;display:grid;place-items:center;font-size:24px;
+    background:#f2ecfb;border:2px solid var(--line);transition:transform .15s}
+  .pstep .plbl{font-weight:800;font-size:12.5px;margin-top:8px;color:var(--ink)}
+  .pstep .psub{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-top:1px}
+  .pstep::after{content:"";position:absolute;top:26px;left:calc(50% + 34px);width:calc(100% - 68px);height:3px;background:var(--line);border-radius:2px}
+  .pstep:last-child::after{display:none}
+  .pstep.cur .pball{background:linear-gradient(140deg,var(--magenta),#ff5da6);border-color:var(--magenta);color:#fff;transform:scale(1.08);box-shadow:0 8px 18px rgba(232,20,139,.4)}
+  .pstep.cur .plbl{color:var(--magenta)}
+  .pstep.done .pball{background:var(--emerald-soft);border-color:var(--emerald);color:var(--emerald)}
+
+  /* assignments modal rows */
+  .asg{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+  .asg-row{display:flex;gap:12px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:16px;cursor:pointer;transition:border-color .12s,box-shadow .12s}
+  .asg-row:hover{border-color:var(--crystal);box-shadow:var(--shadow-sm)}
+  .asg-row img{width:46px;height:auto;flex:none}
+  .asg-row .info{flex:1;min-width:0}
+  .asg-row .t{font-weight:800;font-size:14.5px;color:var(--crystal-deep);line-height:1.15}
+  .asg-row .sub{font-size:12px;color:var(--ink-soft);font-weight:600;margin-top:2px}
+  .asg-row .meta{display:flex;align-items:center;gap:12px;margin-top:5px;font-size:12px;font-weight:800}
+  .asg-row .due{color:var(--magenta)}
+  .asg-row .xp{color:var(--crystal);margin-left:auto}
+
+  /* ============ ASSIGNMENT GATE ============ */
+  .gate-banner{
+    margin:8px 12px 0;border-radius:14px;padding:9px 12px;flex:none;
+    background:linear-gradient(140deg,#fff4e0,#ffe9f4);border:1.5px solid #ffd9a8;
+    display:flex;gap:10px;align-items:center;font-size:12px;font-weight:700;color:#8a5300;line-height:1.4;
+  }
+  .gate-banner img{width:36px;height:auto;flex:none}
+  .gate-banner b{color:var(--magenta-deep)}
+  .gate-banner .gb-link{color:var(--magenta);cursor:pointer;text-decoration:underline;font-weight:800}
+  .btn-gated{background:#e9e2f4 !important;color:#8a80ab !important;box-shadow:none !important;cursor:not-allowed}
+  .journey-footer.gated{filter:grayscale(.5) brightness(.92)}
+  .chip.pulse{animation:chip-pulse 1.8s ease-in-out infinite}
+  @keyframes chip-pulse{0%,100%{box-shadow:var(--shadow-sm)}50%{box-shadow:0 0 0 7px rgba(232,20,139,.16)}}
+  .chip.done-chip{border-color:#bfe8d4;color:#0d7a4d;background:#effaf4}
+
+  /* ============ LAND ZOOM + LAND VIEW ============ */
+  .map-stage.zooming{transition:transform .75s cubic-bezier(.55,.05,.25,1), top .75s cubic-bezier(.55,.05,.25,1)}
+  .hero.zoomed .pill,.hero.zoomed .lockchip{opacity:0;pointer-events:none}
+  .pill,.lockchip{transition:opacity .4s}
+  .hero.zoomed .drawer,.hero.zoomed .drawer-tab,.hero.zoomed .hud{opacity:0;pointer-events:none;transition:opacity .4s}
+
+  .land-view{position:absolute;inset:0;z-index:40;opacity:0;pointer-events:none;transition:opacity .45s .15s}
+  .land-view.open{opacity:1;pointer-events:auto}
+  .lv-bg{position:absolute;inset:-40px;background-repeat:no-repeat;filter:blur(24px) saturate(1.12) brightness(1.03)}
+  .lv-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(36,20,70,.32),rgba(60,30,110,.12) 30%,rgba(36,20,70,.25))}
+  .lv-content{position:absolute;inset:0}
+  .lv-back{
+    position:absolute;top:18px;left:18px;z-index:5;
+    display:flex;align-items:center;gap:8px;padding:11px 20px;border-radius:15px;
+    background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.7);
+    box-shadow:var(--shadow-sm);font-weight:800;font-size:14px;color:var(--crystal-deep);
+  }
+  .lv-back:hover{background:#fff}
+  .lv-head{position:absolute;top:16px;left:0;right:0;text-align:center;color:#fff;z-index:4;pointer-events:none}
+  .lv-head .kick{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;opacity:.9;text-shadow:0 2px 10px rgba(40,20,90,.6)}
+  .lv-head h2{font-size:34px;font-weight:800;text-shadow:0 3px 16px rgba(40,20,90,.65);margin-top:2px}
+  .lv-head .sub{font-size:14px;font-weight:700;opacity:.95;text-shadow:0 2px 10px rgba(40,20,90,.6);margin-top:3px}
+  .lv-progress{
+    position:absolute;top:18px;right:18px;z-index:5;
+    display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:15px;
+    background:var(--glass);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.7);box-shadow:var(--shadow-sm);
+  }
+  .lv-progress .t{font-weight:800;font-size:13px;color:var(--crystal-deep)}
+  .lv-progress .bar{width:110px;height:9px;border-radius:6px;background:#eadff2;overflow:hidden}
+  .lv-progress .bar i{display:block;height:100%;background:var(--magenta);border-radius:6px}
+
+  .lv-stage{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);width:min(92%,1060px);aspect-ratio:1000/560;max-height:78%}
+  .lv-stage svg.trail{position:absolute;inset:0;width:100%;height:100%}
+  .tnode{
+    position:absolute;transform:translate(-50%,-50%);z-index:3;text-align:center;cursor:pointer;
+    transition:transform .15s;
+  }
+  .tnode:hover{transform:translate(-50%,-52%)}
+  .tnode .bub{
+    width:64px;height:64px;border-radius:50%;margin:0 auto;display:grid;place-items:center;
+    background:#fff;box-shadow:0 10px 24px rgba(30,15,60,.4);font-size:24px;position:relative;
+    border:3px solid #fff;
+  }
+  .tnode.done .bub{background:var(--emerald);color:#fff;border-color:#bdf0da}
+  .tnode.cur .bub{background:linear-gradient(140deg,#f0148f,#ff5da6);color:#fff;border-color:#ffc3e2;animation:node-pulse 1.8s infinite}
+  @keyframes node-pulse{0%,100%{box-shadow:0 10px 24px rgba(30,15,60,.4)}50%{box-shadow:0 0 0 10px rgba(232,20,139,.22),0 10px 24px rgba(30,15,60,.4)}}
+  .tnode.lock .bub{background:#efeaf8;color:#9a8fbd}
+  .tnode .lbl{
+    margin-top:7px;display:inline-block;background:rgba(255,255,255,.94);border-radius:11px;
+    padding:5px 12px;font-weight:800;font-size:12.5px;color:var(--ink);box-shadow:0 4px 12px rgba(30,15,60,.3);white-space:nowrap;
+  }
+  .tnode.lock .lbl{color:#7a7095}
+  .tnode.final .bub{width:84px;height:84px;background:linear-gradient(150deg,#f3e8ff,#e6d5ff);border-color:#fff}
+  .tnode.final .bub img{width:52px}
+  .tnode.final.done .bub{background:linear-gradient(150deg,#ffe9a8,#ffd166)}
+  .tnode .mini{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:#fff;
+    display:grid;place-items:center;font-size:12px;box-shadow:0 3px 8px rgba(30,15,60,.3)}
+
+  .buddy-wrap{position:absolute;z-index:6;transform:translate(-50%,-108%);text-align:center;pointer-events:none}
+  .buddy-wrap img{height:66px;width:auto;animation:floaty 3s ease-in-out infinite;filter:drop-shadow(0 8px 12px rgba(30,15,60,.45))}
+  .buddy-wrap .tag{
+    display:inline-block;margin-top:-4px;background:rgba(255,255,255,.95);border-radius:10px;
+    padding:3px 10px;font-weight:800;font-size:11px;color:var(--magenta);box-shadow:0 4px 10px rgba(30,15,60,.3);
+  }
+  .lv-banner{
+    position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:5;
+    background:linear-gradient(140deg,#ffe9a8,#ffd166);border-radius:16px;padding:11px 22px;
+    font-weight:800;font-size:15px;color:#7a4d00;box-shadow:var(--shadow);white-space:nowrap;
+  }
+
+  /* ============ AVATAR ============ */
+  .av-wrap{position:relative;display:inline-block}
+  .av-acc{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:22px;pointer-events:none;
+    filter:drop-shadow(0 2px 4px rgba(30,15,60,.3))}
+  #hudBuddy{cursor:pointer;position:relative}
+  #hudBuddy::after{content:"✎";position:absolute;bottom:-2px;right:-8px;width:18px;height:18px;border-radius:50%;
+    background:var(--crystal);color:#fff;font-size:10px;display:grid;place-items:center;opacity:0;transition:opacity .15s}
+  #hudBuddy:hover::after{opacity:1}
+  .av-preview{
+    display:grid;place-items:center;background:linear-gradient(150deg,#f3e8ff,#fde6f2);
+    border-radius:18px;padding:22px 0 14px;margin-bottom:16px;
+  }
+  .av-preview img{height:96px;width:auto;animation:floaty 3s ease-in-out infinite}
+  .av-preview .av-acc{font-size:32px;top:-20px}
+  .av-row-l{font-weight:800;font-size:13px;color:var(--crystal-deep);margin:12px 0 7px}
+  .swatches{display:flex;gap:10px}
+  .swatch{width:42px;height:42px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .12s}
+  .swatch:hover{transform:scale(1.08)}
+  .swatch.sel{border-color:var(--ink);box-shadow:0 0 0 3px #fff inset}
+  .accs{display:flex;gap:9px;flex-wrap:wrap}
+  .acc-opt{width:46px;height:46px;border-radius:13px;background:#f4effc;display:grid;place-items:center;font-size:22px;
+    cursor:pointer;border:2.5px solid transparent}
+  .acc-opt:hover{background:#ece2fa}
+  .acc-opt.sel{border-color:var(--crystal);background:var(--crystal-soft)}
+  .av-name{
+    width:100%;font-family:inherit;font-weight:700;font-size:15px;color:var(--ink);
+    padding:11px 14px;border-radius:13px;border:2px solid var(--line);outline:none;
+  }
+  .av-name:focus{border-color:var(--crystal)}
+
+  /* ============ QUEST PLAYER ============ */
+  .qplayer{position:fixed;inset:0;z-index:120;display:none;flex-direction:column;
+    background:linear-gradient(160deg,#2a1a52,#4a1e7e 55%,#6d2f9e)}
+  .qplayer.open{display:flex}
+  .qp-top{display:flex;align-items:center;gap:14px;padding:14px 22px;color:#fff;flex:none}
+  .qp-top .qp-land{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;font-weight:800}
+  .qp-top .qp-title{font-weight:800;font-size:19px;line-height:1.05}
+  .qp-steps{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  .qp-step{padding:7px 13px;border-radius:20px;background:rgba(255,255,255,.13);font-size:11.5px;font-weight:800;color:#fff;opacity:.6}
+  .qp-step.cur{background:#fff;color:var(--crystal-deep);opacity:1}
+  .qp-step.done{background:rgba(34,181,115,.9);opacity:1}
+  .qp-round{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:grid;place-items:center;font-size:16px;color:#fff}
+  .qp-round:hover{background:rgba(255,255,255,.3)}
+  .qp-body{flex:1;display:grid;place-items:center;padding:12px 20px 90px;position:relative;min-height:0;overflow:auto}
+  .qp-card{background:#fff;border-radius:26px;box-shadow:0 30px 80px rgba(0,0,0,.45);max-width:660px;width:100%;padding:30px 36px;text-align:center}
+  .qp-kicker{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--crystal);text-transform:uppercase}
+  .qp-q{font-size:33px;font-weight:800;margin:12px 0 22px;line-height:1.25}
+  .qp-answers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .qp-ans{padding:16px;border-radius:16px;border:2.5px solid var(--line);font-weight:800;font-size:22px;cursor:pointer;background:#faf8ff;transition:all .15s}
+  .qp-ans:hover{border-color:var(--crystal);background:var(--crystal-soft)}
+  .qp-ans.correct{background:var(--emerald)!important;border-color:var(--emerald)!important;color:#fff;transform:scale(1.04)}
+  .qp-ans.wrong{background:#ffe3ec!important;border-color:#f099bb!important;animation:shakeX .3s}
+  @keyframes shakeX{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .qp-hint{margin-top:16px;background:#fff4e0;border:1.5px solid #ffd9a8;border-radius:14px;padding:11px 14px;font-weight:700;font-size:13.5px;color:#8a5300;text-align:left}
+  .qp-dots{display:flex;gap:7px;justify-content:center;margin-top:20px}
+  .qp-dot{width:10px;height:10px;border-radius:50%;background:#e8e2f4}
+  .qp-dot.on{background:var(--magenta)}
+  .qp-lt{font-size:26px;font-weight:800;margin:10px 0 8px}
+  .qp-lp{color:var(--ink-soft);font-weight:600;font-size:15px;line-height:1.6;margin:0 0 18px}
+  .qp-groups{display:flex;gap:14px;justify-content:center;margin:6px 0 18px;flex-wrap:wrap}
+  .qp-group{border:2.5px dashed #d9c9f5;border-radius:16px;padding:12px;font-size:22px;letter-spacing:2px;background:#faf7ff;line-height:1.5;max-width:150px}
+  .qp-eq{font-size:28px;font-weight:800;margin-bottom:20px}
+  .qp-eq b{color:var(--magenta)}
+  .qp-kws{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+  .qp-kw{background:var(--crystal-soft);color:var(--crystal-deep);font-weight:800;font-size:13.5px;padding:8px 14px;border-radius:20px}
+
+  /* game */
+  .qp-game{width:100%;max-width:780px;text-align:center}
+  .qp-gq{color:#fff;font-size:42px;font-weight:800;text-shadow:0 4px 20px rgba(0,0,0,.4);margin-bottom:6px}
+  .qp-ghud{display:flex;align-items:center;justify-content:center;gap:22px;color:#fff;font-weight:800;margin-bottom:8px}
+  .qp-ghud .combo{color:#ffd166}
+  .qp-timer{height:10px;border-radius:6px;background:rgba(255,255,255,.2);overflow:hidden;max-width:420px;margin:0 auto 10px}
+  .qp-timer i{display:block;height:100%;background:linear-gradient(90deg,#ffd166,#ff5da6);border-radius:6px;transition:width .1s linear}
+  .qp-crystals{position:relative;height:320px}
+  .qp-crystal{
+    position:absolute;width:118px;height:118px;cursor:pointer;display:grid;place-items:center;
+    font-weight:800;font-size:30px;color:#fff;border:none;
+    clip-path:polygon(50% 0,100% 30%,82% 100%,18% 100%,0 30%);
+    filter:drop-shadow(0 10px 18px rgba(0,0,0,.4));
+    animation:floaty 3.2s ease-in-out infinite;transition:transform .12s;
+  }
+  .qp-crystal:hover{transform:scale(1.07)}
+  .qp-crystal.c0{background:linear-gradient(150deg,#ff5da6,#c026d3)}
+  .qp-crystal.c1{background:linear-gradient(150deg,#8f45ff,#5b21b6)}
+  .qp-crystal.c2{background:linear-gradient(150deg,#3fb7e8,#1f57bd)}
+  .qp-crystal.c3{background:linear-gradient(150deg,#4ed6a1,#0d8a56)}
+  .qp-crystal.shatter{animation:shatter .45s forwards}
+  @keyframes shatter{60%{transform:scale(1.35) rotate(10deg);opacity:.7}100%{transform:scale(.2) rotate(-30deg);opacity:0}}
+  .qp-crystal.wob{animation:shakeX .3s}
+
+  /* results */
+  .qp-stars{font-size:52px;letter-spacing:8px;margin:8px 0 4px}
+  .qp-tally{margin:14px auto 20px;max-width:340px;text-align:left}
+  .qp-tally .tr{display:flex;justify-content:space-between;font-weight:700;font-size:14.5px;padding:7px 2px;border-bottom:1px dashed var(--line)}
+  .qp-tally .tr.total{font-weight:800;font-size:17px;color:var(--magenta);border-bottom:none}
+
+  /* buddy in player */
+  .qp-buddy{position:absolute;left:26px;bottom:18px;display:flex;align-items:flex-end;gap:10px;z-index:5;pointer-events:none}
+  .qp-buddy img{height:84px;animation:floaty 3s ease-in-out infinite;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
+  .qp-bubble{background:#fff;border-radius:16px;border-bottom-left-radius:4px;padding:10px 15px;font-weight:800;font-size:13.5px;color:var(--ink);
+    box-shadow:0 10px 26px rgba(0,0,0,.35);margin-bottom:34px;animation:pop .25s}
+
+  /* fly-up XP + effects */
+  .flyxp{position:fixed;z-index:290;font-weight:800;font-size:20px;color:#ffd166;text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none;animation:flyup 1s forwards}
+  @keyframes flyup{to{transform:translateY(-70px);opacity:0}}
+  #confettiC{position:fixed;inset:0;z-index:300;pointer-events:none}
+  .level-badge.pop{animation:lvpop .6s}
+  @keyframes lvpop{40%{transform:scale(1.35) rotate(-6deg)}70%{transform:scale(.95)}}
+  .pill.unlock-glow{animation:unlockglow 1.6s 3}
+  @keyframes unlockglow{50%{box-shadow:0 0 0 8px rgba(255,209,102,.5),0 8px 22px rgba(40,20,80,.28)}}
+
+  @media(max-width:900px){
+    .hud .mascot,.hud .divider.d-m{display:none}
+    .drawer{width:320px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="topbar" id="topbar">
+  <div class="brand">
+    <img class="lockup" src="assets/logo-full.png" alt="Crystal Quest — Learn. Play. Grow." />
+  </div>
+  <div class="nav-pill">🏠 Home</div>
+  <div class="spacer"></div>
+  <div class="metric-strip">
+    <div class="metric"><img src="assets/gem.png" alt="" /><div><div class="n">1,250 <span style="font-weight:600;color:var(--ink-soft)">XP</span></div></div></div>
+    <div class="level-badge"><div class="lv">Level</div><div class="num">6</div></div>
+    <div class="metric"><span class="ic">🔥</span><div><div class="n">12</div><div class="l">Day Streak</div></div></div>
+    <div class="avatar-wrap">
+      <img src="assets/avatar.png" alt="Maya" /><span class="who">Maya</span><span class="chev">▼</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== HERO: full-background map ===================== -->
+<section class="hero" id="hero">
+  <div class="bg-blur"></div>
+
+  <div class="map-stage" id="mapStage">
+    <img class="art" src="assets/map.png" alt="Crystal Quest world map" />
+
+    <div class="pill done" data-key="place" style="left:176px;top:318px;min-width:212px;min-height:56px">
+      <div class="check">✓</div><div class="nm">Place Value</div>
+    </div>
+
+    <div class="pill active-land selected" data-key="mult" style="left:549px;top:345px;min-width:252px;min-height:78px">
+      <div class="nm">Multiplication &amp; Division</div>
+      <div class="sub"><span>5 / 6 Quests</span> <span class="bar"><i style="width:75%"></i></span></div>
+    </div>
+
+    <div class="pill locked" data-key="dec" style="left:875px;top:320px;min-width:170px;min-height:52px;justify-content:center">
+      <div class="nm">Decimals</div>
+    </div>
+
+    <div class="pill locked" data-key="frac" style="left:184px;top:617px;min-width:178px;min-height:56px;justify-content:center">
+      <div class="nm">Fractions</div>
+    </div>
+
+    <div class="pill locked" data-key="geo" style="left:487px;top:698px;min-width:178px;min-height:54px;justify-content:center">
+      <div class="nm">Geometry</div>
+    </div>
+
+    <div class="pill locked" data-key="data" style="left:853px;top:626px;min-width:176px;min-height:54px;justify-content:center">
+      <div class="nm">Data</div>
+    </div>
+
+    <div class="lockchip" data-lock="dec"  style="left:875px;top:253px">🔒</div>
+    <div class="lockchip" data-lock="frac" style="left:184px;top:547px">🔒</div>
+    <div class="lockchip" data-lock="geo"  style="left:488px;top:628px">🔒</div>
+    <div class="lockchip" data-lock="data" style="left:852px;top:553px">🔒</div>
+  </div>
+
+  <!-- ============ LAND VIEW (zoomed-in island) ============ -->
+  <div class="land-view" id="landView">
+    <div class="lv-bg" id="lvBg"></div>
+    <div class="lv-scrim"></div>
+    <div class="lv-content">
+      <button class="lv-back" onclick="exitLand()">← World Map</button>
+      <div class="lv-head">
+        <div class="kick">Conquer the</div>
+        <h2 id="lvTitle">Land of Multiplication &amp; Division</h2>
+        <div class="sub" id="lvSub">Complete every topic to claim this land's crystal!</div>
+      </div>
+      <div class="lv-progress"><span class="t" id="lvCount">5 / 6</span><span class="bar"><i id="lvBar" style="width:83%"></i></span></div>
+      <div class="lv-stage" id="lvStage">
+        <svg class="trail" viewBox="0 0 1000 560" preserveAspectRatio="none">
+          <path id="lvTrail" d="M120 440 C 200 415 260 390 300 340 C 330 295 250 265 190 225 C 150 195 250 150 390 150 C 500 150 560 180 620 225 C 690 275 760 200 840 120"
+            fill="none" stroke="#ffffff" stroke-opacity=".75" stroke-width="9" stroke-linecap="round" stroke-dasharray="1 22"/>
+        </svg>
+        <!-- topic nodes + buddy injected by JS -->
+      </div>
+      <div class="lv-banner" id="lvBanner" style="display:none">👑 Land Conquered! Amazing work!</div>
+    </div>
+  </div>
+
+  <!-- collapsed-drawer tab -->
+  <button class="drawer-tab" id="drawerTab" onclick="toggleDrawer(true)">
+    ⚔️ Quests <span class="b1">6</span>
+  </button>
+
+  <!-- floating quest drawer -->
+  <aside class="drawer" id="drawer">
+    <div class="hd">
+      <div class="ci">★</div><h3 id="landTitle">Multiplication &amp; Division</h3>
+      <button class="min" title="Hide panel" onclick="toggleDrawer(false)">—</button>
+    </div>
+    <div class="assignee" id="landAssignee">Assigned by Ms. Lopez</div>
+    <div class="gate-banner" id="gateBanner">
+      <img src="assets/book.png" alt="" />
+      <div>Assignment first! Complete <b>Comparing Fractions</b> in the Land of Fractions to continue your journey. <span class="gb-link" onclick="openModal('asgModal')">View</span></div>
+    </div>
+    <ul class="qlist" id="qlist"></ul>
+    <button class="btn btn-primary" id="contBtn">Continue Quest &nbsp;›</button>
+    <div class="journey-footer" id="journeyFooter">
+      <img src="assets/island-thumb.png" alt="" />
+      <div style="flex:1;min-width:0">
+        <div class="jt">Continue Your Journey</div>
+        <div class="js">Quest 5 of 6 · Division Basics</div>
+        <div class="jbar"><i></i></div>
+      </div>
+      <button class="go" id="journeyGo">›</button>
+    </div>
+  </aside>
+
+  <!-- bottom HUD -->
+  <div class="hud">
+    <div class="cluster">
+      <div class="ring">
+        <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="#eee6f6" stroke-width="6"/>
+          <circle id="hudRingBar" cx="26" cy="26" r="21" fill="none" stroke="#e8148b" stroke-width="6" stroke-linecap="round"
+            stroke-dasharray="131.9" stroke-dashoffset="76.5" transform="rotate(-90 26 26)"/></svg>
+        <div class="pct" id="hudPct">42%</div>
+      </div>
+      <div>
+        <div class="pl">Your Progress</div>
+        <div class="ps" id="hudCount">18 of 43 Quests Completed</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="cluster" style="gap:16px">
+      <div class="rw"><img src="assets/gem-big.png" alt=""/><div><div class="rn">1,250</div><div class="rl">Total XP</div></div></div>
+      <div class="rw"><img src="assets/medal.png" alt=""/><div><div class="rn">14</div><div class="rl">Badges</div></div></div>
+      <div class="rw"><img src="assets/chest.png" alt=""/><div><div class="rn">3</div><div class="rl">Treasures</div></div></div>
+    </div>
+    <div class="divider d-m"></div>
+    <div class="mascot">
+      <button class="av-wrap" id="hudBuddy" title="Customize your buddy!" onclick="openAvatar()">
+        <img id="hudBuddyImg" src="assets/mascot.png?v=2" alt="Your buddy" />
+        <span class="av-acc" id="hudBuddyAcc"></span>
+      </button>
+      <div style="min-width:0">
+        <div class="m-t" id="hudBuddyLine">Keep going, Maya!</div>
+        <div class="m-s">Complete quests to level up and unlock new lands.</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="chip pulse" id="asgChip" onclick="openModal('asgModal')">📜 New Assignment <span class="b1" id="asgBadge">1</span></button>
+    <button class="btn btn-primary" onclick="openModal('diagModal')">💎 Take Diagnostic</button>
+  </div>
+</section>
+
+<!-- ===================== QUEST PLAYER ===================== -->
+<div class="qplayer" id="questPlayer">
+  <div class="qp-top">
+    <div>
+      <div class="qp-land" id="qpLand">Land of Multiplication &amp; Division</div>
+      <div class="qp-title" id="qpTitle">Division Basics</div>
+    </div>
+    <div class="qp-steps" id="qpSteps"></div>
+    <button class="qp-round" id="qpMute" title="Sound on/off" onclick="qpMute()">🔊</button>
+    <button class="qp-round" title="Quit quest" onclick="qpQuit()">✕</button>
+  </div>
+  <div class="qp-body" id="qpBody"></div>
+  <div class="qp-buddy">
+    <img id="qpBuddyImg" src="assets/mascot.png?v=2" alt="" />
+    <div class="qp-bubble" id="qpBubble">Let's do this!</div>
+  </div>
+</div>
+<canvas id="confettiC"></canvas>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ===================== QUEST PATHWAY MODAL ===================== -->
+<div class="modal-scrim" id="questModal" onclick="if(event.target===this)closeModal('questModal')">
+  <div class="modal">
+    <div class="mh">
+      <div class="kick" id="qmLand">Land of Multiplication &amp; Division</div>
+      <h2 id="qmTitle">Division Basics</h2>
+      <div class="x" onclick="closeModal('questModal')">✕</div>
+    </div>
+    <div class="mb">
+      <p>Every quest is a 5-step journey. Conquer all five to claim your crystals and move forward on the map.</p>
+      <div class="path" id="qmPath">
+        <div class="pstep"><div class="pball">📝</div><div class="plbl">Pre-Test</div><div class="psub">Show what you know</div></div>
+        <div class="pstep"><div class="pball">📖</div><div class="plbl">Lesson</div><div class="psub">Learn the skill</div></div>
+        <div class="pstep"><div class="pball">✏️</div><div class="plbl">Practice</div><div class="psub">Try it out</div></div>
+        <div class="pstep"><div class="pball">🎮</div><div class="plbl">Game</div><div class="psub">Play to master</div></div>
+        <div class="pstep"><div class="pball">🏆</div><div class="plbl">Post-Test</div><div class="psub">Prove it!</div></div>
+      </div>
+      <button class="btn btn-primary" id="qmBtn" onclick="toast('🚀','Launching quest… (prototype)')">Start Quest 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DIAGNOSTIC MODAL ===================== -->
+<div class="modal-scrim" id="diagModal" onclick="if(event.target===this)closeModal('diagModal')">
+  <div class="modal">
+    <div class="mh" style="background:linear-gradient(135deg,#5b21b6,#2f6fdc)">
+      <div class="kick">Shape Your Adventure</div>
+      <h2>The Crystal Diagnostic</h2>
+      <div class="x" onclick="closeModal('diagModal')">✕</div>
+    </div>
+    <div class="mb">
+      <p>A short, adaptive check across all six lands. Crystal Quest uses your results to <b>unlock the right lands</b> and line up the quests that will help you grow the fastest — your own personal path.</p>
+      <div class="path" style="justify-content:flex-start;gap:18px">
+        <div class="pstep" style="flex:none;width:auto"><div class="pball">🧭</div><div class="plbl">~15 min</div></div>
+        <div class="pstep" style="flex:none;width:auto"><div class="pball">🎯</div><div class="plbl">Adaptive</div></div>
+        <div class="pstep" style="flex:none;width:auto"><div class="pball">🗺️</div><div class="plbl">Builds path</div></div>
+      </div>
+      <button class="btn btn-primary" onclick="closeModal('diagModal');toast('🧭','Starting diagnostic… (prototype)')">Begin Diagnostic 🧭</button>
+      <button class="btn btn-ghost" style="margin-top:9px" onclick="closeModal('diagModal');toast('🔄','Retake anytime — we\'ll refresh your path')">🔄 Retake to Refresh Path</button>
+      <p style="text-align:center;font-size:12px;margin:12px 0 0">Retake anytime to unlock the next best quests for you.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ASSIGNMENTS MODAL ===================== -->
+<div class="modal-scrim" id="asgModal" onclick="if(event.target===this)closeModal('asgModal')">
+  <div class="modal">
+    <div class="mh">
+      <div class="kick">From Ms. Lopez</div>
+      <h2>New Assignment!</h2>
+      <div class="x" onclick="closeModal('asgModal')">✕</div>
+    </div>
+    <div class="mb">
+      <p><b style="color:var(--ink)">Your teacher assigned you a quest in an unlocked land!</b><br>
+        Complete this side-quest in the Land of Fractions before continuing your personal journey.</p>
+      <div class="asg">
+        <div class="asg-row" id="asgRow1" onclick="closeModal('asgModal');openQuest('Comparing Fractions','Fractions','frac')">
+          <img src="assets/hex-frac.png" alt="" />
+          <div class="info">
+            <div class="t" id="asgRow1T">Fractions: Comparing Fractions</div>
+            <div class="sub">Land of Fractions · Quest 2 of 6</div>
+            <div class="meta"><span class="due" id="asgRow1Due">📅 Due: May 23</span><span class="xp">💎 50 XP</span></div>
+          </div>
+        </div>
+        <div class="asg-row" onclick="toast('🔒','The Land of Decimals unlocks after Multiplication & Division')">
+          <img src="assets/hex-dec.png" alt="" />
+          <div class="info">
+            <div class="t">Decimals: Add &amp; Subtract Decimals</div>
+            <div class="sub">Land of Decimals · Quest 1 of 6</div>
+            <div class="meta"><span class="due">📅 Due: May 26</span><span class="xp">💎 50 XP</span></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="closeModal('asgModal');openQuest('Comparing Fractions','Fractions','frac')">View Assignment &nbsp;›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== AVATAR BUILDER MODAL ===================== -->
+<div class="modal-scrim" id="avatarModal" onclick="if(event.target===this)closeModal('avatarModal')">
+  <div class="modal" style="max-width:480px">
+    <div class="mh">
+      <div class="kick">Your Adventure Buddy</div>
+      <h2>Build Your Buddy!</h2>
+      <div class="x" onclick="closeModal('avatarModal')">✕</div>
+    </div>
+    <div class="mb">
+      <div class="av-preview">
+        <span class="av-wrap">
+          <img id="avPrevImg" src="assets/mascot.png?v=2" alt="" />
+          <span class="av-acc" id="avPrevAcc"></span>
+        </span>
+      </div>
+      <div class="av-row-l">Crystal Color</div>
+      <div class="swatches" id="avSwatches"></div>
+      <div class="av-row-l">Accessory</div>
+      <div class="accs" id="avAccs"></div>
+      <div class="av-row-l">Buddy Name</div>
+      <input class="av-name" id="avName" maxlength="14" placeholder="Sparkle" />
+      <button class="btn btn-primary" style="margin-top:18px" onclick="saveAvatar()">Save My Buddy ✦</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  let inLand = false, currentLandKey = null;
+
+  /* ---- fit map: fill hero height, anchored left; blur fills the rest ---- */
+  function fitMap(){
+    if (inLand) return;                      // camera is zoomed into a land
+    const hero = $('#hero'), stage = $('#mapStage');
+    const h = hero.clientHeight, w = hero.clientWidth;
+    // fill the hero height; while the drawer is open, keep the rightmost island
+    // content (stage x <= 960) clear of it (drawer + margins = 386px)
+    const drawerOpen = !$('#drawer').classList.contains('collapsed');
+    const s = drawerOpen
+      ? Math.min(h / 806, (w - 386) / 960, w / 1014)
+      : Math.min(h / 806, w / 1014);
+    stage.style.transform = `scale(${s})`;
+    stage.style.top = ((h - 806 * s) / 2) + 'px';
+  }
+  window.addEventListener('resize', fitMap);
+  window.addEventListener('load', fitMap);
+  fitMap();
+
+  /* ---- toast ---- */
+  function toast(icon,msg){
+    const w = $('#toastWrap');
+    const el = document.createElement('div');
+    el.className='toast';
+    el.innerHTML = `<span class="ti">${icon}</span><span>${msg}</span>`;
+    w.appendChild(el);
+    requestAnimationFrame(()=>el.classList.add('show'));
+    setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300);},2400);
+  }
+
+  /* ---- modals ---- */
+  function openModal(id){ $('#'+id).classList.add('open'); }
+  function closeModal(id){ $('#'+id).classList.remove('open'); }
+  function openDiag(){ openModal('diagModal'); }
+
+  /* ---- assignment gate ---- */
+  const state = { assignmentPending: true, xp: 1250, level: 6, questsDone: 18 };
+  const ASSIGNED = { key:'frac', title:'Comparing Fractions' };
+  const isAssigned = (title,key) => key===ASSIGNED.key && title===ASSIGNED.title;
+
+  function gateBlock(){
+    toast('📜','Complete your assignment first!');
+    setTimeout(()=>openModal('asgModal'), 550);
+  }
+
+  function openQuest(title, land, key, curStep, status){
+    // a pending teacher assignment blocks progress on the personal path;
+    // reviewing conquered quests is still allowed
+    if(state.assignmentPending && !isAssigned(title,key) && status!=='done'){
+      gateBlock();
+      return;
+    }
+    $('#qmTitle').innerHTML = title;
+    $('#qmLand').innerHTML = 'Land of ' + land;
+    const steps = document.querySelectorAll('#qmPath .pstep');
+    const cur = (curStep==null)?0:curStep;
+    steps.forEach((s,i)=>{ s.classList.remove('cur','done');
+      if(i<cur) s.classList.add('done'); else if(i===cur) s.classList.add('cur'); });
+    const btn = $('#qmBtn');
+    const playable = typeof QUEST_CONTENT!=='undefined' && QUEST_CONTENT[title] && status!=='done';
+    btn.textContent = status==='done' ? 'Review Quest 🔍' : (playable ? 'Play Quest ▶' : (cur>0 ? 'Continue Quest 🚀' : 'Start Quest 🚀'));
+    btn.onclick = (state.assignmentPending && isAssigned(title,key))
+      ? completeAssignmentDemo
+      : (playable ? ()=>{ closeModal('questModal'); launchQuest(title); }
+                  : ()=>toast('🚀','This quest is coming soon!'));
+    openModal('questModal');
+  }
+
+  function completeAssignmentDemo(){
+    closeModal('questModal');
+    state.assignmentPending = false;
+    applyGate();
+    addXP(50);
+    confetti(90);
+    toast('🎉','Assignment complete! +50 XP — your journey is unlocked!');
+  }
+
+  function applyGate(){
+    const pending = state.assignmentPending;
+    $('#gateBanner').style.display = pending ? 'flex' : 'none';
+    const cont = $('#contBtn');
+    cont.classList.toggle('btn-gated', pending);
+    cont.innerHTML = pending ? '🔒 Assignment First' : 'Continue Quest &nbsp;›';
+    cont.onclick = pending ? gateBlock
+      : ()=>openQuest('Division Basics','Multiplication & Division','mult',3);
+    const jf = $('#journeyFooter'), go = $('#journeyGo');
+    jf.classList.toggle('gated', pending);
+    go.textContent = pending ? '🔒' : '›';
+    go.onclick = pending ? gateBlock
+      : ()=>openQuest('Division Basics','Multiplication & Division','mult',3);
+    const chip = $('#asgChip');
+    chip.classList.toggle('pulse', pending);
+    chip.classList.toggle('done-chip', !pending);
+    chip.innerHTML = pending
+      ? '📜 New Assignment <span class="b1" id="asgBadge">1</span>'
+      : '✅ Assignment Done';
+    if(!pending){
+      const t = $('#asgRow1T'), due = $('#asgRow1Due'), row = $('#asgRow1');
+      if(t) t.innerHTML = '✓ Fractions: Comparing Fractions';
+      if(due){ due.textContent = '✓ Completed'; due.style.color = 'var(--emerald)'; }
+      if(row) row.style.opacity = .65;
+    }
+  }
+
+  function animateXP(from, to){
+    const els = document.querySelectorAll('.metric .n');
+    const el = els[0]; if(!el) return;
+    let n = from;
+    const step = ()=>{ n += 2; if(n >= to){ el.innerHTML = to.toLocaleString()+' <span style="font-weight:600;color:var(--ink-soft)">XP</span>'; return; }
+      el.innerHTML = n.toLocaleString()+' <span style="font-weight:600;color:var(--ink-soft)">XP</span>'; requestAnimationFrame(step); };
+    step();
+  }
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){document.querySelectorAll('.modal-scrim.open').forEach(m=>m.classList.remove('open'));}});
+
+  /* ---- drawer ---- */
+  function toggleDrawer(open){
+    $('#drawer').classList.toggle('collapsed', !open);
+    $('#drawerTab').classList.toggle('show', !open);
+    fitMap();
+  }
+
+  /* ---- land data ---- */
+  const LANDS = {
+    place:{ title:'Place Value', sub:'Land 1 of 6 · Conquered', locked:false, center:[176,270],
+      quests:[['Read & Write Numbers','🔢','done'],['Compare Numbers','⚖️','done'],['Rounding','🎯','done'],['Expanded Form','➕','done'],['Number Patterns','🔁','done'],['Place Value Boss','👑','done']] },
+    mult:{ title:'Multiplication & Division', sub:'Assigned by Ms. Lopez', locked:false, center:[560,300],
+      quests:[['Equal Groups','👥','done'],['Arrays','⠿','done'],['Facts Fluency','⚡','done'],['Multiply by 10s','×10','done'],['Division Basics','➗','prog'],['Word Problems','❓','lock']] },
+    dec:{ title:'Decimals', locked:true, center:[870,300] },
+    frac:{ title:'Fractions', locked:true, sidequest:['Comparing Fractions'], center:[180,590] },
+    geo:{ title:'Geometry', locked:true, center:[490,650] },
+    data:{ title:'Data', locked:true, center:[850,580] }
+  };
+
+  function renderLand(key){
+    const L = LANDS[key];
+    $('#landTitle').innerHTML = L.title;
+    $('#landAssignee').textContent = L.sub || '';
+    const ul = $('#qlist');
+    ul.innerHTML = L.quests.map((q,i)=>{
+      const [nm,ic,st] = q;
+      const mark = st==='done'?'✓':(st==='lock'?'🔒':'');
+      const tag = st==='prog'?'<span class="qtag">In Progress</span>':`<span class="qmark">${mark}</span>`;
+      const click = st==='lock'?`toast('🔒','Conquer the quests before it first!')`
+                               :`openQuest('${nm.replace(/'/g,"")}','${L.title.replace(/'/g,"")}','${key}',${st==='prog'?3:0},'${st}')`;
+      return `<li class="qrow ${st}" onclick="${click}"><span class="qn">${i+1}</span><span class="qic">${ic}</span><span class="qnm">${nm}</span>${tag}</li>`;
+    }).join('');
+  }
+  renderLand('mult');
+  applyGate();
+
+  /* ---- land pill + lock chip clicks ---- */
+  function shake(el){
+    el.animate([
+      {transform:'translate(-50%,-50%)'},
+      {transform:'translate(calc(-50% - 6px),-50%)'},
+      {transform:'translate(calc(-50% + 6px),-50%)'},
+      {transform:'translate(-50%,-50%)'}
+    ],{duration:280});
+  }
+  function landClick(key, el){
+    const L = LANDS[key];
+    if(L.locked){
+      shake(el);
+      if(L.sidequest){
+        toast('📜',`Ms. Lopez unlocked one quest here — opening it!`);
+        setTimeout(()=>openQuest(L.sidequest[0], L.title, key), 600);
+      } else {
+        toast('🔒','Conquer the lands before it to unlock this one!');
+      }
+      return;
+    }
+    document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
+    el.classList.add('selected');
+    renderLand(key);
+    enterLand(key);
+  }
+  document.querySelectorAll('.pill').forEach(el=>{
+    el.addEventListener('click',()=>landClick(el.dataset.key, el));
+  });
+  document.querySelectorAll('.lockchip').forEach(el=>{
+    el.addEventListener('click',()=>landClick(el.dataset.lock, el));
+  });
+
+  /* ============ LAND ZOOM ============ */
+  function enterLand(key){
+    inLand = true; currentLandKey = key;
+    const hero = $('#hero'), stage = $('#mapStage');
+    const c = LANDS[key].center;
+    const w = hero.clientWidth, h = hero.clientHeight;
+    const Z = 2.4;
+    stage.classList.add('zooming');
+    hero.classList.add('zoomed');
+    requestAnimationFrame(()=>{
+      stage.style.top = '0px';
+      stage.style.transform = `translate(${w/2 - c[0]*Z}px, ${h/2 - c[1]*Z}px) scale(${Z})`;
+    });
+    // blurred backdrop for the land view, centered on the same island
+    const ZB = 2.8;
+    const bg = $('#lvBg');
+    bg.style.backgroundImage = "url('assets/map.png')";
+    bg.style.backgroundSize = (1014*ZB) + 'px auto';
+    bg.style.backgroundPosition = `${w/2 - c[0]*ZB}px ${h*0.5 - (c[1]-70)*ZB}px`;
+    buildLandView(key);
+    setTimeout(()=>$('#landView').classList.add('open'), 480);
+  }
+
+  function exitLand(){
+    $('#landView').classList.remove('open');
+    const hero = $('#hero'), stage = $('#mapStage');
+    hero.classList.remove('zoomed');
+    inLand = false; currentLandKey = null;
+    fitMap();
+    setTimeout(()=>stage.classList.remove('zooming'), 800);
+  }
+
+  const NODE_XY = [[120,440],[300,340],[190,225],[390,150],[620,225],[840,120]];
+
+  function buildLandView(key){
+    const L = LANDS[key];
+    $('#lvTitle').innerHTML = 'Land of ' + L.title;
+    const stage = $('#lvStage');
+    stage.querySelectorAll('.tnode,.buddy-wrap').forEach(n=>n.remove());
+
+    const doneCount = L.quests.filter(q=>q[2]==='done').length;
+    const allDone = doneCount === L.quests.length;
+    let curIdx = L.quests.findIndex(q=>q[2]!=='done');
+    $('#lvCount').textContent = doneCount + ' / ' + L.quests.length;
+    $('#lvBar').style.width = Math.round(doneCount/L.quests.length*100) + '%';
+    $('#lvSub').textContent = allDone ? 'You conquered this land — every topic mastered!' :
+      "Complete every topic to claim this land's crystal!";
+    $('#lvBanner').style.display = allDone ? 'block' : 'none';
+
+    L.quests.forEach((q,i)=>{
+      const [nm,ic,st] = q;
+      const [x,y] = NODE_XY[i];
+      const final = i === L.quests.length-1;
+      const cls = st==='prog' ? 'cur' : st;
+      const node = document.createElement('div');
+      node.className = `tnode ${cls}${final?' final':''}`;
+      node.style.left = (x/10)+'%'; node.style.top = (y/5.6)+'%';
+      const bubContent = final
+        ? `<img src="assets/gem-big.png" alt=""/><span class="mini">${st==='done'?'👑':(st==='lock'?'🔒':'⚔️')}</span>`
+        : (st==='done' ? '✓' : `${ic}${st==='lock'?'<span class="mini">🔒</span>':''}`);
+      node.innerHTML = `<div class="bub">${bubContent}</div><div class="lbl">${i+1}. ${nm}</div>`;
+      node.onclick = st==='lock'
+        ? ()=>{ toast('🔒','Conquer the topics before it first!'); }
+        : ()=>openQuest(nm, L.title, key, st==='prog'?3:0, st);
+      stage.appendChild(node);
+    });
+
+    // buddy stands on the current topic (or celebrates at the end)
+    const bIdx = curIdx === -1 ? L.quests.length-1 : curIdx;
+    const [bx,by] = NODE_XY[bIdx];
+    const buddy = document.createElement('div');
+    buddy.className = 'buddy-wrap';
+    buddy.style.left = (bx/10)+'%'; buddy.style.top = (by/5.6)+'%';
+    buddy.innerHTML = `<span class="av-wrap"><img src="assets/mascot.png?v=2" style="filter:hue-rotate(${avatar.hue}deg)"/><span class="av-acc">${avatar.acc}</span></span><br><span class="tag">${avatar.name}</span>`;
+    stage.appendChild(buddy);
+  }
+
+  /* ============ AVATAR BUDDY ============ */
+  let avatar = null;
+  try { avatar = JSON.parse(localStorage.getItem('cq-avatar')); } catch(e){}
+  if(!avatar) avatar = { hue:0, acc:'', name:'Sparkle' };
+  let tempAv = {...avatar};
+
+  const HUES = [
+    {n:'Pink', v:0,    c:'#f45bb5'},
+    {n:'Violet', v:305, c:'#9a5bf4'},
+    {n:'Ocean', v:240,  c:'#3fb7e8'},
+    {n:'Mint', v:180,   c:'#4ed6a1'}
+  ];
+  const ACCS = ['','🎀','🧢','👑','⭐','😎'];
+
+  function openAvatar(){
+    tempAv = {...avatar};
+    renderBuilder();
+    openModal('avatarModal');
+  }
+
+  function renderBuilder(){
+    $('#avPrevImg').style.filter = `hue-rotate(${tempAv.hue}deg)`;
+    $('#avPrevAcc').textContent = tempAv.acc;
+    $('#avSwatches').innerHTML = HUES.map(h=>
+      `<div class="swatch${tempAv.hue===h.v?' sel':''}" title="${h.n}" style="background:${h.c}" onclick="tempAv.hue=${h.v};renderBuilder()"></div>`).join('');
+    $('#avAccs').innerHTML = ACCS.map(a=>
+      `<div class="acc-opt${tempAv.acc===a?' sel':''}" onclick="tempAv.acc='${a}';renderBuilder()">${a||'—'}</div>`).join('');
+    $('#avName').value = tempAv.name;
+  }
+
+  function saveAvatar(){
+    tempAv.name = $('#avName').value.trim() || 'Sparkle';
+    avatar = {...tempAv};
+    try { localStorage.setItem('cq-avatar', JSON.stringify(avatar)); } catch(e){}
+    syncAvatar();
+    closeModal('avatarModal');
+    toast('✦', avatar.name + ' is ready for adventure!');
+  }
+
+  function syncAvatar(){
+    $('#hudBuddyImg').style.filter = `hue-rotate(${avatar.hue}deg)`;
+    $('#hudBuddyAcc').textContent = avatar.acc;
+    const qb = $('#qpBuddyImg'); if(qb) qb.style.filter = `hue-rotate(${avatar.hue}deg)`;
+    if(inLand && currentLandKey) buildLandView(currentLandKey);
+  }
+  syncAvatar();
+
+  /* ============ SOUND (synthesized, no assets) ============ */
+  let actx = null, muted = false;
+  function sfx(kind){
+    if(muted) return;
+    try{
+      actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+      const t = actx.currentTime;
+      const play = (f,st,d,type='sine',g=.11)=>{
+        const o=actx.createOscillator(), ga=actx.createGain();
+        o.type=type; o.frequency.value=f;
+        ga.gain.setValueAtTime(g, t+st);
+        ga.gain.exponentialRampToValueAtTime(.001, t+st+d);
+        o.connect(ga); ga.connect(actx.destination);
+        o.start(t+st); o.stop(t+st+d);
+      };
+      if(kind==='correct'){ play(660,0,.12); play(880,.09,.16); }
+      else if(kind==='wrong'){ play(150,0,.2,'square',.07); }
+      else if(kind==='click'){ play(440,0,.06,'triangle',.06); }
+      else if(kind==='fanfare'){ [523,659,784,1047].forEach((f,i)=>play(f,i*.12,.3)); }
+      else if(kind==='unlock'){ play(392,0,.15); play(523,.13,.15); play(659,.26,.35); }
+    }catch(e){}
+  }
+  function qpMute(){ muted = !muted; $('#qpMute').textContent = muted?'🔇':'🔊'; }
+
+  /* ============ CONFETTI + FLY-UP XP ============ */
+  function confetti(n=120){
+    const c = $('#confettiC'), x = c.getContext('2d');
+    c.width = innerWidth; c.height = innerHeight;
+    const cols = ['#e8148b','#7b2ff7','#ffd166','#22b573','#3fb7e8','#ff5da6'];
+    const P = [];
+    for(let i=0;i<n;i++) P.push({
+      x: innerWidth/2 + (Math.random()-.5)*360, y: innerHeight*.4,
+      vx:(Math.random()-.5)*14, vy:-6-Math.random()*11,
+      s:6+Math.random()*7, r:Math.random()*Math.PI, vr:(Math.random()-.5)*.3, col:cols[i%6]
+    });
+    let fr = 0;
+    (function tick(){
+      x.clearRect(0,0,c.width,c.height);
+      P.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.35; p.r+=p.vr;
+        x.save(); x.translate(p.x,p.y); x.rotate(p.r); x.fillStyle=p.col;
+        x.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); x.restore(); });
+      if(++fr<160) requestAnimationFrame(tick); else x.clearRect(0,0,c.width,c.height);
+    })();
+  }
+  function flyXP(text, x, y){
+    const el = document.createElement('div');
+    el.className='flyxp'; el.textContent=text;
+    el.style.left=(x||innerWidth/2)+'px'; el.style.top=(y||innerHeight/2)+'px';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 1000);
+  }
+
+  /* ============ XP / LEVEL / GLOBAL PROGRESS ============ */
+  function addXP(n){
+    const from = state.xp; state.xp += n;
+    animateXP(from, state.xp);
+    if(state.xp >= 1500 && state.level < 7){
+      state.level = 7;
+      const badge = document.querySelector('.level-badge');
+      badge.querySelector('.num').textContent = '7';
+      badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
+      setTimeout(()=>{ sfx('fanfare'); toast('⬆️','LEVEL 7! You\'re unstoppable, Maya!'); confetti(140); }, 500);
+    }
+  }
+  function bumpQuestsDone(){
+    state.questsDone++;
+    const pct = Math.round(state.questsDone/43*100);
+    $('#hudPct').textContent = pct+'%';
+    $('#hudCount').textContent = `${state.questsDone} of 43 Quests Completed`;
+    $('#hudRingBar').setAttribute('stroke-dashoffset', (131.9*(1-pct/100)).toFixed(1));
+  }
+
+  /* ============ QUEST CONTENT (Grade 3) ============ */
+  const QUEST_CONTENT = {
+    'Division Basics': {
+      land:'mult',
+      pre: [
+        {q:'12 ÷ 3 = ?', a:['3','4','6','2'], c:1},
+        {q:'10 ÷ 2 = ?', a:['5','4','2','8'], c:0},
+        {q:'8 ÷ 4 = ?',  a:['4','3','2','6'], c:2}
+      ],
+      lesson: `
+        <div class="qp-kicker">Lesson</div>
+        <h3 class="qp-lt">Division means EQUAL GROUPS</h3>
+        <p class="qp-lp">12 ÷ 3 asks: <b>"If I split 12 crystals into 3 equal groups, how many are in each group?"</b></p>
+        <div class="qp-groups">
+          <div class="qp-group">💎💎<br>💎💎</div>
+          <div class="qp-group">💎💎<br>💎💎</div>
+          <div class="qp-group">💎💎<br>💎💎</div>
+        </div>
+        <div class="qp-eq">12 ÷ 3 = <b>4</b> in each group!</div>
+        <button class="btn btn-primary" onclick="qpNext()">Got it — let's practice! ✏️</button>`,
+      practice: [
+        {q:'15 ÷ 3 = ?', a:['4','5','6','3'], c:1, hint:'Split 15 crystals into 3 equal groups. Count one group!'},
+        {q:'14 ÷ 2 = ?', a:['6','8','7','12'], c:2, hint:'Half of 14 — share 14 between 2 friends.'},
+        {q:'18 ÷ 6 = ?', a:['3','4','2','6'], c:0, hint:'How many 6s fit inside 18? Count: 6, 12, 18…'}
+      ],
+      game: {
+        intro:'Crystals are floating up! Smash the one with the correct answer before time runs out. Combos earn bonus points!',
+        time: 45,
+        problems: [
+          {q:'8 ÷ 2',  c:4, opts:[2,3,4,6]},
+          {q:'15 ÷ 5', c:3, opts:[3,4,5,2]},
+          {q:'16 ÷ 4', c:4, opts:[3,4,6,8]},
+          {q:'18 ÷ 3', c:6, opts:[4,5,6,9]},
+          {q:'20 ÷ 4', c:5, opts:[4,5,6,10]},
+          {q:'12 ÷ 6', c:2, opts:[2,3,4,6]},
+          {q:'21 ÷ 3', c:7, opts:[6,7,8,9]},
+          {q:'24 ÷ 4', c:6, opts:[4,6,8,7]}
+        ]
+      },
+      post: [
+        {q:'16 ÷ 4 = ?', a:['3','4','5','6'], c:1},
+        {q:'20 ÷ 4 = ?', a:['4','6','5','8'], c:2},
+        {q:'12 ÷ 6 = ?', a:['2','3','4','6'], c:0}
+      ]
+    },
+    'Word Problems': {
+      land:'mult',
+      pre: [
+        {q:'12 cookies shared equally on 4 plates. How many on each plate?', a:['2','3','4','6'], c:1},
+        {q:'10 pencils split between 2 boxes. How many per box?', a:['5','4','2','8'], c:0},
+        {q:'Maya reads 3 pages a day. How many days to read 9 pages?', a:['2','4','3','6'], c:2}
+      ],
+      lesson: `
+        <div class="qp-kicker">Lesson</div>
+        <h3 class="qp-lt">Spot the DIVISION words!</h3>
+        <p class="qp-lp">Some words are secret signals that a story problem wants you to <b>divide</b>:</p>
+        <div class="qp-kws"><span class="qp-kw">share equally</span><span class="qp-kw">split into</span><span class="qp-kw">each</span><span class="qp-kw">groups of</span><span class="qp-kw">per</span></div>
+        <p class="qp-lp">"18 stickers <b>shared equally</b> among 6 friends" → <b>18 ÷ 6 = 3</b> stickers each!</p>
+        <button class="btn btn-primary" onclick="qpNext()">Got it — let's practice! ✏️</button>`,
+      practice: [
+        {q:'24 crayons split into 6 equal boxes. How many in each box?', a:['3','4','5','6'], c:1, hint:'"Split into" means divide: 24 ÷ 6.'},
+        {q:'A dragon guards 20 gems in 5 equal piles. How many gems per pile?', a:['4','5','3','10'], c:0, hint:'"Per pile" means divide: 20 ÷ 5.'},
+        {q:'16 students make teams of 4. How many teams?', a:['3','5','4','8'], c:2, hint:'"Teams of 4" — how many 4s in 16?'}
+      ],
+      game: {
+        intro:'Story problems incoming! Smash the crystal with the right answer. Read fast, think faster!',
+        time: 50,
+        problems: [
+          {q:'10 gems, 5 bags. Each bag?',    c:2, opts:[2,3,5,4]},
+          {q:'12 eggs, 4 nests. Each nest?',  c:3, opts:[2,3,4,6]},
+          {q:'18 stars, 9 wands. Each wand?', c:2, opts:[2,3,4,9]},
+          {q:'14 fish, 2 tanks. Each tank?',  c:7, opts:[6,7,8,12]},
+          {q:'25 coins, 5 chests. Each chest?', c:5, opts:[4,5,6,20]},
+          {q:'16 wings, 8 dragons. Each dragon?', c:2, opts:[2,4,6,8]}
+        ]
+      },
+      post: [
+        {q:'21 apples shared equally in 3 baskets. How many per basket?', a:['6','7','8','9'], c:1},
+        {q:'15 knights split into 5 equal squads. How many per squad?', a:['3','4','5','2'], c:0},
+        {q:'Cupcakes come in boxes of 6. How many boxes for 18 cupcakes?', a:['2','4','3','6'], c:2}
+      ]
+    }
+  };
+
+  /* ============ QUEST PLAYER ENGINE ============ */
+  const QP_STEPS = ['Pre-Test','Lesson','Practice','Game','Post-Test'];
+  const CHEERS = ["You've got this!","Nice thinking!","Keep going!","So close to conquering!","Crystal power! ✦","Big brain moves!"];
+  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+  let QP = null;
+
+  function say(t){ const b = $('#qpBubble'); b.textContent = t; b.style.animation='none'; void b.offsetWidth; b.style.animation=''; }
+
+  function launchQuest(title){
+    const Q = QUEST_CONTENT[title];
+    if(!Q) return;
+    QP = { title, Q, step:0, i:0, preScore:0, practiceXP:0, firstTry:true,
+           gScore:0, gCombo:0, gIdx:0, gTime:Q.game.time, timer:null, postScore:0 };
+    $('#qpTitle').textContent = title;
+    $('#qpLand').textContent = 'Land of ' + LANDS[Q.land].title;
+    $('#questPlayer').classList.add('open');
+    syncAvatar();
+    say(pick(["Let's do this!","Adventure time!","I believe in you!"]));
+    sfx('click');
+    renderQP();
+  }
+
+  function qpQuit(){
+    if(QP && QP.timer) clearInterval(QP.timer);
+    $('#questPlayer').classList.remove('open');
+    QP = null;
+  }
+
+  function qpSteps(){
+    $('#qpSteps').innerHTML = QP_STEPS.map((s,i)=>
+      `<span class="qp-step${i<QP.step?' done':(i===QP.step?' cur':'')}">${i<QP.step?'✓ ':''}${s}</span>`).join('');
+  }
+
+  function dots(n, i){ return `<div class="qp-dots">${Array.from({length:n},(_,k)=>`<span class="qp-dot${k<=i?' on':''}"></span>`).join('')}</div>`; }
+
+  function qCard(kicker, item, showHint){
+    return `<div class="qp-card">
+      <div class="qp-kicker">${kicker}</div>
+      <div class="qp-q">${item.q}</div>
+      <div class="qp-answers">${item.a.map((o,k)=>`<button class="qp-ans" id="ans${k}" onclick="qpAns(${k})">${o}</button>`).join('')}</div>
+      <div id="qpHintBox">${showHint?`<div class="qp-hint">💡 ${item.hint}</div>`:''}</div>
+      ${dots(qList().length, QP.i)}
+    </div>`;
+  }
+
+  function qList(){ return QP.step===0 ? QP.Q.pre : (QP.step===2 ? QP.Q.practice : QP.Q.post); }
+
+  function renderQP(){
+    QP.busy = false;
+    qpSteps();
+    const B = $('#qpBody');
+    if(QP.step===0){ B.innerHTML = qCard('Warm-up · show what you know', qList()[QP.i], false); }
+    else if(QP.step===1){ B.innerHTML = `<div class="qp-card">${QP.Q.lesson}</div>`; say('Watch closely… ✨'); }
+    else if(QP.step===2){ QP.firstTry = true; B.innerHTML = qCard('Practice · hints unlocked', qList()[QP.i], false); }
+    else if(QP.step===3){
+      B.innerHTML = `<div class="qp-card">
+        <div class="qp-kicker">Mini-Game</div>
+        <h3 class="qp-lt">💥 Crystal Smash!</h3>
+        <p class="qp-lp">${QP.Q.game.intro}</p>
+        <button class="btn btn-primary" onclick="qpStartGame()">Start! 🎮</button></div>`;
+      say('My favorite part!');
+    }
+    else if(QP.step===4){ B.innerHTML = qCard('Post-Test · prove it!', qList()[QP.i], false); if(QP.i===0) say('Show what you learned!'); }
+  }
+
+  function qpNext(){ QP.step++; QP.i=0; renderQP(); }
+
+  function qpAns(k){
+    if(QP.busy) return;                     // one answer per question
+    const item = qList()[QP.i];
+    const good = k===item.c;
+    const el = $('#ans'+k);
+    el.classList.add(good?'correct':'wrong');
+    sfx(good?'correct':'wrong');
+    if(QP.step===2){ // practice: hints + retry
+      if(!good){ QP.firstTry=false; $('#qpHintBox').innerHTML = `<div class="qp-hint">💡 ${item.hint}</div>`; say('Try again — use the hint!'); return; }
+      QP.busy = true;
+      if(QP.firstTry){ QP.practiceXP+=5; const r=el.getBoundingClientRect(); flyXP('+5 XP', r.left+r.width/2, r.top); }
+      say(pick(CHEERS));
+      setTimeout(()=>{ QP.i++; QP.firstTry=true;
+        if(QP.i>=qList().length){ QP.step=3; renderQP(); } else renderQP(); }, 700);
+      return;
+    }
+    // pre & post: one shot each
+    QP.busy = true;
+    if(QP.step===0 && good) QP.preScore++;
+    if(QP.step===4 && good) QP.postScore++;
+    if(good) say(pick(CHEERS)); else say("No worries — we'll learn it!");
+    setTimeout(()=>{
+      QP.i++;
+      if(QP.i < qList().length){ renderQP(); return; }
+      if(QP.step===0){ QP.step=1; renderQP(); }
+      else { // post finished
+        if(QP.postScore>=2) qpResults();
+        else { QP.step=1; QP.postScore=0; say("Let's review together — you're close!"); renderQP(); toast('💪',"Almost! One more look at the lesson."); }
+      }
+    }, 700);
+  }
+
+  /* ---- Crystal Smash ---- */
+  const SLOTS = [[8,8],[58,4],[22,52],[64,50]];
+  function qpStartGame(){
+    QP.gIdx=0; QP.gScore=0; QP.gCombo=0; QP.gTime=QP.Q.game.time;
+    renderGame();
+    QP.timer = setInterval(()=>{
+      QP.gTime -= .1;
+      const bar = $('#qpTimerBar');
+      if(bar) bar.style.width = Math.max(0, QP.gTime/QP.Q.game.time*100)+'%';
+      if(QP.gTime<=0){ clearInterval(QP.timer); gameOver(); }
+    }, 100);
+  }
+  function renderGame(){
+    const P = QP.Q.game.problems[QP.gIdx];
+    const order = [...P.opts].sort(()=>Math.random()-.5);
+    $('#qpBody').innerHTML = `<div class="qp-game">
+      <div class="qp-ghud"><span>Problem ${QP.gIdx+1}/${QP.Q.game.problems.length}</span><span>⭐ ${QP.gScore}</span><span class="combo">${QP.gCombo>1?'🔥 Combo ×'+QP.gCombo:''}</span></div>
+      <div class="qp-timer"><i id="qpTimerBar" style="width:${Math.max(0,QP.gTime/QP.Q.game.time*100)}%"></i></div>
+      <div class="qp-gq">${P.q} = ?</div>
+      <div class="qp-crystals">${order.map((o,k)=>
+        `<button class="qp-crystal c${k}" style="left:${SLOTS[k][0]}%;top:${SLOTS[k][1]}%;animation-delay:${k*.4}s" onclick="qpCrystal(this,${o},${P.c})">${o}</button>`).join('')}
+      </div></div>`;
+  }
+  function qpCrystal(el, val, correct){
+    if(val===correct){
+      QP.gCombo++; const pts = 10 + (QP.gCombo-1)*2; QP.gScore += pts;
+      sfx('correct'); el.classList.add('shatter');
+      const r = el.getBoundingClientRect(); flyXP('+'+pts, r.left+r.width/2, r.top);
+      if(QP.gCombo===3) say('🔥 ON FIRE!');
+      setTimeout(()=>{
+        QP.gIdx++;
+        if(QP.gIdx >= QP.Q.game.problems.length){ clearInterval(QP.timer); gameOver(); }
+        else renderGame();
+      }, 380);
+    } else {
+      QP.gCombo=0; sfx('wrong');
+      el.classList.remove('wob'); void el.offsetWidth; el.classList.add('wob');
+    }
+  }
+  function gameOver(){
+    if(QP.timer){ clearInterval(QP.timer); QP.timer = null; }
+    const max = QP.Q.game.problems.length;
+    const solved = QP.gIdx;
+    QP.gStars = solved>=max ? 3 : (solved>=Math.ceil(max*.6) ? 2 : 1);
+    $('#qpBody').innerHTML = `<div class="qp-card">
+      <div class="qp-kicker">Game Over</div>
+      <div class="qp-stars">${'⭐'.repeat(QP.gStars)}${'☆'.repeat(3-QP.gStars)}</div>
+      <h3 class="qp-lt">Score: ${QP.gScore}</h3>
+      <p class="qp-lp">You smashed ${solved} of ${max} crystals!</p>
+      <button class="btn btn-primary" onclick="qpNext()">Final challenge → Post-Test 🏆</button></div>`;
+    say(QP.gStars===3?'PERFECT SMASH!':'Great smashing!');
+  }
+
+  function qpResults(){
+    const gameXP = Math.round(QP.gScore/4);
+    const postXP = QP.postScore*5;
+    QP.totalXP = 25 + QP.practiceXP + gameXP + postXP;
+    qpStepsDone();
+    $('#qpBody').innerHTML = `<div class="qp-card">
+      <div class="qp-kicker">Quest Complete!</div>
+      <div class="qp-stars">${'⭐'.repeat(QP.gStars||2)}${'☆'.repeat(3-(QP.gStars||2))}</div>
+      <h3 class="qp-lt">${QP.title} — Conquered!</h3>
+      <div class="qp-tally">
+        <div class="tr"><span>Quest complete</span><span>+25 XP</span></div>
+        <div class="tr"><span>Practice (first-try)</span><span>+${QP.practiceXP} XP</span></div>
+        <div class="tr"><span>Crystal Smash score</span><span>+${gameXP} XP</span></div>
+        <div class="tr"><span>Post-Test (${QP.postScore}/3)</span><span>+${postXP} XP</span></div>
+        <div class="tr total"><span>Total</span><span>+${QP.totalXP} XP</span></div>
+      </div>
+      <button class="btn btn-primary" onclick="qpClaim()">Claim Reward ✦</button></div>`;
+    say('WE DID IT!! 🎉');
+    sfx('fanfare'); confetti(130);
+  }
+  function qpStepsDone(){ QP.step=5; $('#qpSteps').innerHTML = QP_STEPS.map(s=>`<span class="qp-step done">✓ ${s}</span>`).join(''); }
+
+  function qpClaim(){
+    const title = QP.title, Q = QP.Q, xp = QP.totalXP;
+    qpQuit();
+    addXP(xp);
+    bumpQuestsDone();
+    completeQuest(title, Q.land);
+  }
+
+  /* ============ WORLD REACTIONS ============ */
+  function completeQuest(title, landKey){
+    const L = LANDS[landKey];
+    const idx = L.quests.findIndex(q=>q[0]===title);
+    if(idx>-1) L.quests[idx][2]='done';
+    if(idx+1 < L.quests.length && L.quests[idx+1][2]==='lock') L.quests[idx+1][2]='prog';
+    renderLand(landKey);
+    updateWorldPill(landKey);
+    if(inLand && currentLandKey===landKey) buildLandView(landKey);
+    toast('✅', title+' conquered!');
+    const allDone = L.quests.every(q=>q[2]==='done');
+    if(allDone){
+      L.sub = 'Conquered!';
+      setTimeout(()=>{
+        toast('👑','LAND CONQUERED: '+L.title+'! +100 XP');
+        addXP(100); confetti(170); sfx('fanfare');
+      }, 900);
+      if(landKey==='mult') setTimeout(()=>unlockLand('dec'), 2300);
+    }
+  }
+
+  function updateWorldPill(key){
+    const L = LANDS[key];
+    const pill = document.querySelector(`.pill[data-key="${key}"]`);
+    if(!pill || !L.quests) return;
+    const done = L.quests.filter(q=>q[2]==='done').length;
+    if(done === L.quests.length){
+      pill.classList.remove('active-land');
+      pill.classList.add('done');
+      pill.style.display='flex';
+      pill.innerHTML = `<div class="check">✓</div><div class="nm">${L.title}</div>`;
+    } else {
+      const sub = pill.querySelector('.sub span'); if(sub) sub.textContent = `${done} / 6 Quests`;
+      const bar = pill.querySelector('.bar i'); if(bar) bar.style.width = Math.round(done/6*100)+'%';
+    }
+  }
+
+  function unlockLand(key){
+    const L = LANDS[key];
+    L.locked = false;
+    L.sub = 'Just unlocked — a new adventure!';
+    L.quests = [['Tenths & Hundredths','🔢','prog'],['Compare Decimals','⚖️','lock'],['Round Decimals','🎯','lock'],['Add Decimals','➕','lock'],['Subtract Decimals','➖','lock'],['Decimal Boss','👑','lock']];
+    const chip = document.querySelector(`.lockchip[data-lock="${key}"]`);
+    if(chip){
+      chip.style.transition='transform .5s, opacity .5s';
+      chip.style.transform='translate(-50%,-95%) scale(1.6) rotate(16deg)';
+      chip.style.opacity='0';
+      setTimeout(()=>chip.remove(), 520);
+    }
+    const pill = document.querySelector(`.pill[data-key="${key}"]`);
+    if(pill){ pill.classList.remove('locked'); pill.classList.add('unlock-glow'); }
+    sfx('unlock');
+    toast('🗺️','NEW LAND UNLOCKED: '+L.title+'! Cross the bridge!');
+  }
+</script>
+</body>
+</html>
