@@ -1,16 +1,15 @@
 /* Crystal Quest — pan, walk, camera follow */
 const MAP_W = 1014, MAP_H = 806;
 const AVATARS = [
-  { id:'maya',  label:'Maya' },
-  { id:'rio',   label:'Rio' },
-  { id:'jun',   label:'Jun' },
-  { id:'amari', label:'Amari' },
-  { id:'priya', label:'Priya' },
-  { id:'leo',   label:'Leo' }
+  { id:'mai',    label:'Mai' },
+  { id:'imani',  label:'Imani' },
+  { id:'darius', label:'Darius' },
+  { id:'nolan',  label:'Nolan' },
+  { id:'lena',   label:'Lena' }
 ];
 function avatarSrc(id){
   const ok = AVATARS.some(a => a.id===id);
-  return 'assets/avatars/' + (ok?id:'maya') + '.png?v=2';
+  return 'assets/avatars/' + (ok?id:'mai') + '.png?v=3';
 }
 function avatarOf(id){ return AVATARS.find(a => a.id===id) || AVATARS[0]; }
 
@@ -131,7 +130,7 @@ function spawnWalker(){
 }
 
 function syncWalkerArt(){
-  const id = (save && save.avatar && save.avatar.id) || (avatar && avatar.id) || 'maya';
+  const id = (save && save.avatar && save.avatar.id) || (avatar && avatar.id) || 'mai';
   const src = avatarSrc(id);
   const w = $('#walkerImg'); if(w) w.src = src;
   const n = $('#walkerName'); if(n) n.textContent = (save && save.studentName) || '';
@@ -222,7 +221,7 @@ function initExplore(){
 
 function renderAvatarGrid(hostId, selectedId){
   const host = $('#'+hostId); if(!host) return;
-  const cur = selectedId || (tempAv && tempAv.id) || 'maya';
+  const cur = selectedId || (tempAv && tempAv.id) || 'mai';
   host.innerHTML = AVATARS.map(a =>
     `<button type="button" class="av-pick${a.id===cur?' sel':''}" data-id="${a.id}" title="${a.label}">
       <img src="${avatarSrc(a.id)}" alt="${a.label}">

@@ -1,7 +1,7 @@
 /* Crystal Quest — map, HUD, title, ceremonies */
 let inLand = false, currentLandKey = null;
-let avatar = { id:'maya' };
-let tempAv = { id:'maya' };
+let avatar = { id:'mai' };
+let tempAv = { id:'mai' };
 const NODE_XY = [[120,440],[300,340],[190,225],[390,150],[620,225],[840,120]];
 const HUES = [
   {n:'Pink', v:0,    c:'#ec18c8'},
@@ -59,14 +59,14 @@ function continueSave(){
 function startNewAdventure(){
   if(loadSave() && !confirm('Start a new adventure? This replaces the saved one on this device.')) return;
   $('#setupName').value = '';
-  tempAv = { id:'maya' };
+  tempAv = { id:'mai' };
   renderAvatarGrid('setupAvGrid', tempAv.id);
   $('#setupPanel').classList.add('show');
 }
 
 function confirmNewAdventure(){
   const name = ($('#setupName').value||'').trim() || 'Explorer';
-  const buddy = { id: (tempAv && tempAv.id) || 'maya' };
+  const buddy = { id: (tempAv && tempAv.id) || 'mai' };
   const next = newAdventureSave(name, buddy);
   setSave(next);
   $('#setupPanel').classList.remove('show');
@@ -376,7 +376,7 @@ function buildLandView(key){
   const buddy = document.createElement('div');
   buddy.className = 'buddy-wrap';
   buddy.style.left = (bx/10)+'%'; buddy.style.top = (by/5.6)+'%';
-  const aid = (avatar && avatar.id) || 'maya';
+  const aid = (avatar && avatar.id) || 'mai';
   const who = (save && save.studentName) || 'You';
   buddy.innerHTML = `<span class="av-wrap"><img src="${avatarSrc(aid)}" alt=""/></span><br><span class="tag">${who}</span>`;
   stage.appendChild(buddy);
@@ -497,7 +497,7 @@ function openAvatar(){
 }
 
 function saveAvatar(){
-  avatar = { id: (tempAv && tempAv.id) || 'maya' };
+  avatar = { id: (tempAv && tempAv.id) || 'mai' };
   if(save){ save.avatar = avatar; persist(); }
   try{ localStorage.setItem(AVATAR_KEY, JSON.stringify(avatar)); }catch(e){}
   syncAvatar();

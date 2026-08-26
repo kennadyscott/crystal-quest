@@ -69,7 +69,7 @@ function defaultAvatar(){
     const a = JSON.parse(localStorage.getItem(AVATAR_KEY));
     if(a && a.id) return { id: a.id };
   }catch(e){}
-  return { id:'maya' };
+  return { id:'mai' };
 }
 
 function newAdventureSave(studentName, avatar){
