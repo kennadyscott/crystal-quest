@@ -143,13 +143,22 @@ function qCard(kicker, item, showHint){
   </div>`;
 }
 
+function itemCard(kicker, item, showHint){
+  return item && item.type==='drag_drop' ? ddCard(kicker, item) : qCard(kicker, item, showHint);
+}
+
 function renderQP(){
   QP.busy = false;
   qpSteps();
   const B = $('#qpBody');
-  if(QP.step===0){ B.innerHTML = qCard('Warm-up · show what you know', qList()[QP.i], false); }
+  if(QP.step===0){ B.innerHTML = itemCard('Warm-up · show what you know', qList()[QP.i], false); }
   else if(QP.step===1){ B.innerHTML = `<div class="qp-card">${QP.Q.lesson}</div>`; say('Watch closely… ✨'); }
-  else if(QP.step===2){ QP.firstTry = true; B.innerHTML = qCard('Practice · hints unlocked', qList()[QP.i], false); }
+  else if(QP.step===2){
+    // firstTry is per-ITEM, not per-render — drag_drop re-renders on every tap
+    const fk = QP.step + ':' + QP.i;
+    if(QP.ftKey !== fk){ QP.ftKey = fk; QP.firstTry = true; }
+    B.innerHTML = itemCard('Practice · hints unlocked', qList()[QP.i], false);
+  }
   else if(QP.step===3){
     const kind = (QP.Q.game && QP.Q.game.type) || 'smash';
     const title = kind==='sort' ? '🧩 Crystal Sort!' : '💥 Crystal Smash!';
@@ -161,12 +170,41 @@ function renderQP(){
     say('My favorite part!');
   }
   else if(QP.step===4){
-    B.innerHTML = qCard('Post-Test · prove it!', qList()[QP.i], false);
+    B.innerHTML = itemCard('Post-Test · prove it!', qList()[QP.i], false);
     if(QP.i===0) say('Show what you learned!');
   }
 }
 
 function qpNext(){ QP.step++; QP.i=0; renderQP(); }
+
+/* Shared advance paths — every item type (MC, drag_drop, …) scores through
+   these so pre/practice/post semantics stay identical across types. */
+function qpPracticeAdvance(anchorEl){
+  QP.busy = true;
+  if(QP.firstTry){
+    QP.practiceXP+=5;
+    if(anchorEl){ const r=anchorEl.getBoundingClientRect(); flyXP('+5 XP', r.left+r.width/2, r.top); }
+  }
+  say(pick(CHEERS));
+  setTimeout(()=>{ QP.i++; QP.firstTry=true;
+    if(QP.i>=qList().length){ QP.step=3; renderQP(); } else renderQP(); }, 700);
+}
+function qpOneShotAdvance(good){
+  QP.busy = true;
+  if(QP.step===0 && good) QP.preScore++;
+  if(QP.step===4 && good) QP.postScore++;
+  if(good) say(pick(CHEERS)); else say("No worries — we'll learn it!");
+  setTimeout(()=>{
+    QP.i++;
+    if(QP.i < qList().length){ renderQP(); return; }
+    if(QP.step===0){ QP.step=1; renderQP(); }
+    else {
+      if(QP.review){ qpReviewDone(); return; }
+      if(QP.postScore>=2) qpResults();
+      else { QP.step=1; QP.postScore=0; say("Let's review together — you're close!"); renderQP(); toast('💪',"Almost! One more look at the lesson."); }
+    }
+  }, 700);
+}
 
 function qpAns(k){
   if(!QP || QP.busy) return;
@@ -182,27 +220,104 @@ function qpAns(k){
       say('Try again — use the hint!');
       return;
     }
-    QP.busy = true;
-    if(QP.firstTry){ QP.practiceXP+=5; const r=el.getBoundingClientRect(); flyXP('+5 XP', r.left+r.width/2, r.top); }
-    say(pick(CHEERS));
-    setTimeout(()=>{ QP.i++; QP.firstTry=true;
-      if(QP.i>=qList().length){ QP.step=3; renderQP(); } else renderQP(); }, 700);
+    qpPracticeAdvance(el);
     return;
   }
-  QP.busy = true;
-  if(QP.step===0 && good) QP.preScore++;
-  if(QP.step===4 && good) QP.postScore++;
-  if(good) say(pick(CHEERS)); else say("No worries — we'll learn it!");
-  setTimeout(()=>{
-    QP.i++;
-    if(QP.i < qList().length){ renderQP(); return; }
-    if(QP.step===0){ QP.step=1; renderQP(); }
-    else {
-      if(QP.review){ qpReviewDone(); return; }
-      if(QP.postScore>=2) qpResults();
-      else { QP.step=1; QP.postScore=0; say("Let's review together — you're close!"); renderQP(); toast('💪',"Almost! One more look at the lesson."); }
+  qpOneShotAdvance(good);
+}
+
+/* ---- drag_drop item renderer (tap-to-place, same pattern as Crystal Sort) ----
+   Item shape (shared contract):
+   { type:'drag_drop', q, zones:[{id,label}], tokens:[{id,text}],
+     answer:{zoneId:[tokenIds]}, hint? }                                       */
+function ddInitIfNeeded(item){
+  const key = QP.step + ':' + QP.i;
+  if(QP.ddKey === key) return;
+  QP.ddKey = key;
+  QP.ddSel = null;
+  QP.ddPlace = {};                             // tokenId -> zoneId
+  QP.ddOrder = shuffle(item.tokens.map(t=>t.id));
+}
+function ddCard(kicker, item){
+  ddInitIfNeeded(item);
+  const tokById = {};
+  item.tokens.forEach(t=>{ tokById[t.id]=t; });
+  const zones = item.zones.map(z=>{
+    const placed = Object.keys(QP.ddPlace).filter(tid=>QP.ddPlace[tid]===z.id);
+    return `<div class="dd-zone${QP.ddSel?' target':''}" onclick="qpDDZone('${z.id}')">
+      <div class="dd-zone-h">${z.label}</div>
+      <div class="dd-zone-items">${placed.map(tid=>
+        `<button class="dd-chip in" id="ddtok-${tid}" onclick="qpDDReturn(event,'${tid}')">${tokById[tid].text}</button>`).join('')
+        || '<span class="dd-empty">Tap here</span>'}</div>
+    </div>`;
+  }).join('');
+  const pool = QP.ddOrder.filter(tid=>!(tid in QP.ddPlace)).map(tid=>
+    `<button class="dd-chip${QP.ddSel===tid?' sel':''}" id="ddtok-${tid}" onclick="qpDDPick('${tid}')">${tokById[tid].text}</button>`).join('');
+  const allPlaced = Object.keys(QP.ddPlace).length === item.tokens.length;
+  return `<div class="qp-card dd-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q dd-q">${item.q}</div>
+    <div class="dd-zones">${zones}</div>
+    <div class="dd-pool">${pool || '<span class="dd-empty">All placed — check your answer!</span>'}</div>
+    <div class="dd-help">Tap a crystal, then tap the group it belongs in. Tap a placed crystal to take it back.</div>
+    <button class="btn btn-primary dd-check" onclick="qpDDCheck()"${allPlaced?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpDDPick(tid){
+  if(!QP || QP.busy) return;
+  QP.ddSel = QP.ddSel===tid ? null : tid;
+  sfx('click');
+  renderQP();
+}
+function qpDDZone(zid){
+  if(!QP || QP.busy || !QP.ddSel) return;
+  QP.ddPlace[QP.ddSel] = zid;
+  QP.ddSel = null;
+  sfx('click');
+  renderQP();
+}
+function qpDDReturn(ev, tid){
+  ev.stopPropagation();
+  if(!QP || QP.busy) return;
+  delete QP.ddPlace[tid];
+  QP.ddSel = null;
+  renderQP();
+}
+function ddCorrectZone(item, tid){
+  const z = item.zones.find(z=> (item.answer[z.id]||[]).includes(tid));
+  return z ? z.id : null;
+}
+function qpDDCheck(){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  if(Object.keys(QP.ddPlace).length !== item.tokens.length) return;
+  const wrong = item.tokens.filter(t=> QP.ddPlace[t.id] !== ddCorrectZone(item, t.id)).map(t=>t.id);
+  const good = wrong.length===0;
+  item.tokens.forEach(t=>{
+    const el = $('#ddtok-'+t.id);
+    if(el) el.classList.add(wrong.includes(t.id)?'bad':'good');
+  });
+  sfx(good?'correct':'wrong');
+  if(QP.step===2){
+    if(!good){
+      QP.firstTry = false;
+      QP.busy = true;
+      say('So close — the red ones bounced back!');
+      setTimeout(()=>{
+        wrong.forEach(tid=>{ delete QP.ddPlace[tid]; });
+        QP.busy = false;
+        renderQP();
+        const hb = $('#qpHintBox');
+        if(hb) hb.innerHTML = item.hint ? `<div class="qp-hint">💡 ${item.hint}</div>` : `<div class="qp-hint">💡 Look again at the ones that came back!</div>`;
+      }, 900);
+      return;
     }
-  }, 700);
+    qpPracticeAdvance(document.querySelector('.dd-check'));
+    return;
+  }
+  qpOneShotAdvance(good);
 }
 
 function qpStartGame(){
@@ -386,3 +501,46 @@ function qpClaim(){
   const result = applyQuestComplete(title, land, { xp, stars, postScore: post });
   if(typeof afterQuestComplete==='function') afterQuestComplete(title, land, result);
 }
+
+/* ---- drag_drop demo (dev-only): open index.html?demo=dragdrop ----
+   A fixture quest showing the drag_drop item type in every step it can
+   appear in. Not part of canon content — real items come from the builder. */
+const DD_DEMO_QUEST = {
+  land: 'mult',
+  pre: [
+    { type:'drag_drop', q:'Drag each number into the group where it belongs.',
+      zones:[{id:'z1',label:'Multiples of 5'},{id:'z2',label:'NOT multiples of 5'}],
+      tokens:[{id:'t1',text:'15'},{id:'t2',text:'12'},{id:'t3',text:'30'},{id:'t4',text:'8'}],
+      answer:{ z1:['t1','t3'], z2:['t2','t4'] } },
+    { q:'5 × 4 = ?', a:['9','20','25','45'], c:1 }
+  ],
+  lesson: '<div class="qp-kicker">Lesson</div><h3 class="qp-lt">Groups have RULES</h3><p class="qp-lp">A sorting question gives every group a rule. Read the rule, test each crystal against it, then place it. Multiples of 5 always end in 0 or 5!</p><button class="btn btn-primary" onclick="qpNext()">Got it — let\'s practice! ✏️</button>',
+  practice: [
+    { type:'drag_drop', q:'Sort the facts: which equal 24 and which equal 18?',
+      zones:[{id:'z1',label:'Equals 24'},{id:'z2',label:'Equals 18'}],
+      tokens:[{id:'t1',text:'6 × 4'},{id:'t2',text:'3 × 6'},{id:'t3',text:'8 × 3'},{id:'t4',text:'2 × 9'}],
+      answer:{ z1:['t1','t3'], z2:['t2','t4'] },
+      hint:'Work each one out: 6 × 4 = 24, 3 × 6 = 18 — then match the rest.' }
+  ],
+  game: { type:'smash', intro:'Quick smash round!', time:30,
+    problems:[ {q:'6 × 3', c:18, opts:[16,18,21,24]}, {q:'4 × 4', c:16, opts:[12,14,16,20]} ] },
+  post: [
+    { type:'drag_drop', q:'Last one! Sort the numbers into even and odd.',
+      zones:[{id:'z1',label:'Even'},{id:'z2',label:'Odd'}],
+      tokens:[{id:'t1',text:'14'},{id:'t2',text:'9'},{id:'t3',text:'22'},{id:'t4',text:'7'}],
+      answer:{ z1:['t1','t3'], z2:['t2','t4'] } },
+    { q:'7 × 2 = ?', a:['12','14','16','9'], c:1 },
+    { q:'20 ÷ 4 = ?', a:['4','6','5','8'], c:2 }
+  ]
+};
+try{
+  const _qp = new URLSearchParams(location.search);
+  if(_qp.get('demo') === 'dragdrop'){
+    window.addEventListener('load', ()=>{
+      QUEST_CONTENT['Sorting Showcase'] = DD_DEMO_QUEST;
+      const t = document.getElementById('titleScreen');
+      if(t) t.classList.add('gone');
+      setTimeout(()=>launchQuest('Sorting Showcase'), 350);
+    });
+  }
+}catch(e){}
