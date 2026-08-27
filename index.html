@@ -765,6 +765,27 @@
   .qp-key.op{background:var(--crystal-soft);color:var(--crystal-deep)}
   .qp-key.util{grid-column:span 2;background:#f6f2fc;color:var(--ink-soft);font-size:16px}
 
+  /* bar-graph builder */
+  .gp-card{max-width:660px}
+  .gp-chart{position:relative;height:240px;margin:4px auto 14px;max-width:460px}
+  .gp-grid{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between}
+  .gp-line{border-top:1.5px dashed #e8e2f4;position:relative;height:0}
+  .gp-line span{position:absolute;left:-22px;top:-9px;font-size:11px;font-weight:700;color:#a99cc8}
+  .gp-cols{position:absolute;inset:0;display:flex;justify-content:space-evenly;align-items:flex-end;padding:0 8px}
+  .gp-col{display:flex;flex-direction:column;align-items:center;width:88px;height:100%;justify-content:flex-end}
+  .gp-val{font-weight:800;font-size:16px;color:var(--crystal-deep);margin-bottom:2px}
+  .gp-barwrap{flex:1;width:56px;display:flex;align-items:flex-end;width:56px}
+  .gp-bar{width:100%;border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,#ff5da6,var(--magenta));
+    transition:height .25s cubic-bezier(.3,.9,.3,1);min-height:4px}
+  .gp-bar.good{background:linear-gradient(180deg,#3ddc97,var(--emerald))}
+  .gp-bar.bad{background:linear-gradient(180deg,#ffb3c8,#f0668f);animation:shakeX .3s}
+  .gp-lbl{font-weight:800;font-size:13px;margin:6px 0 4px}
+  .gp-btns{display:flex;gap:6px;margin-bottom:-46px}
+  .gp-btn{width:38px;height:34px;border-radius:10px;border:2px solid var(--line);background:#fff;
+    font-size:19px;font-weight:800;color:var(--crystal-deep);cursor:pointer;font-family:inherit}
+  .gp-btn:hover{border-color:var(--magenta)}
+  .gp-chart{margin-bottom:60px}
+
   /* ============ COLLECTION ============ */
   .col-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:8px}
   .col-item{text-align:center;padding:12px 8px;border-radius:16px;background:#f6f2fc;border:1.5px solid var(--line)}
@@ -1110,12 +1131,12 @@
   <div class="qp-body" id="diagBody"></div>
 </div>
 
-<script src="js/content.js?v=12"></script>
-<script src="js/content-packs.js?v=12"></script>
-<script src="js/state.js?v=12"></script>
-<script src="js/player.js?v=12"></script>
-<script src="js/diag.js?v=12"></script>
-<script src="js/explore.js?v=12"></script>
-<script src="js/world.js?v=12"></script>
+<script src="js/content.js?v=13"></script>
+<script src="js/content-packs.js?v=13"></script>
+<script src="js/state.js?v=13"></script>
+<script src="js/player.js?v=13"></script>
+<script src="js/diag.js?v=13"></script>
+<script src="js/explore.js?v=13"></script>
+<script src="js/world.js?v=13"></script>
 </body>
 </html>

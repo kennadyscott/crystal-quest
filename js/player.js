@@ -153,7 +153,86 @@ function itemCard(kicker, item, showHint){
   if(item && item.type==='multiselect') return msCard(kicker, item);
   if(item && item.type==='dropdown')   return dcCard(kicker, item);
   if(item && item.type==='equation_entry') return eqCard(kicker, item);
+  if(item && item.type==='graph_plot') return gpCard(kicker, item);
   return qCard(kicker, item, showHint);
+}
+
+/* ---- graphing item renderer (STAAR "graphing", Grade-3 flavor) ----
+   { type:'graph_plot', kind:'bars', q, max, categories:[{label,target}], hint? }
+   Students raise each bar with +/− to match the data. kind:'points'
+   (coordinate plotting) is reserved for upper-grade worlds.              */
+function gpInitIfNeeded(item){
+  const key = 'gp' + QP.step + ':' + QP.i;
+  if(QP.gpKey === key) return;
+  QP.gpKey = key;
+  QP.gpVals = item.categories.map(()=>0);
+  QP.gpTouched = false;
+}
+function gpCard(kicker, item){
+  gpInitIfNeeded(item);
+  const max = item.max || 10;
+  const cols = item.categories.map((cat,i)=>{
+    const v = QP.gpVals[i];
+    return `<div class="gp-col">
+      <div class="gp-val">${v}</div>
+      <div class="gp-barwrap"><div class="gp-bar" id="gpbar${i}" style="height:${(v/max)*100}%"></div></div>
+      <div class="gp-lbl">${cat.label}</div>
+      <div class="gp-btns">
+        <button class="gp-btn" onclick="qpGP(${i},-1)">−</button>
+        <button class="gp-btn" onclick="qpGP(${i},1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+  const lines = [];
+  for(let y=max; y>=0; y--) lines.push(`<div class="gp-line"><span>${y}</span></div>`);
+  return `<div class="qp-card gp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q" style="font-size:22px">${item.q}</div>
+    <div class="gp-chart">
+      <div class="gp-grid">${lines.join('')}</div>
+      <div class="gp-cols">${cols}</div>
+    </div>
+    <button class="btn btn-primary dd-check" onclick="qpGPCheck()"${QP.gpTouched?'':' disabled'}>Check my graph ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpGP(i, d){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  const max = item.max || 10;
+  QP.gpVals[i] = Math.max(0, Math.min(max, QP.gpVals[i] + d));
+  QP.gpTouched = true;
+  sfx('click');
+  renderQP();
+}
+function qpGPCheck(){
+  if(!QP || QP.busy || !QP.gpTouched) return;
+  const item = qList()[QP.i];
+  const wrong = item.categories.map((c,i)=>i).filter(i=>QP.gpVals[i] !== item.categories[i].target);
+  const good = wrong.length===0;
+  item.categories.forEach((_,i)=>{
+    const el = $('#gpbar'+i); if(!el) return;
+    el.classList.add(wrong.includes(i)?'bad':'good');
+  });
+  sfx(good?'correct':'wrong');
+  if(QP.step===2){
+    if(!good){
+      QP.firstTry = false;
+      QP.busy = true;
+      say('Check the red bars against the data!');
+      setTimeout(()=>{
+        QP.busy = false;
+        renderQP();
+        const hb = $('#qpHintBox');
+        if(hb) hb.innerHTML = item.hint ? `<div class="qp-hint">💡 ${item.hint}</div>` : `<div class="qp-hint">💡 Count again — then raise or lower the red bars.</div>`;
+      }, 900);
+      return;
+    }
+    qpPracticeAdvance(document.querySelector('.dd-check'));
+    return;
+  }
+  qpOneShotAdvance(good);
 }
 
 /* ---- equation-entry item renderer (STAAR "equation editor") ----
@@ -772,6 +851,9 @@ const ITEMS_DEMO_QUEST = {
   game: { type:'smash', intro:'Quick smash round!', time:30,
     problems:[ {q:'7 × 3', c:21, opts:[18,21,24,27]}, {q:'5 × 5', c:25, opts:[20,25,30,15]} ] },
   post: [
+    { type:'graph_plot', kind:'bars', max:6,
+      q:'The class voted for pets: cats 4, dogs 5, fish 2. Build the bar graph!',
+      categories:[{label:'Cats', target:4},{label:'Dogs', target:5},{label:'Fish', target:2}] },
     { type:'multiselect', q:'Pick the TWO facts that equal 18.',
       a:['9 × 2','8 × 2','6 × 3','5 × 4'], cs:[0,2] },
     { type:'dropdown', q:'To share 15 stickers among 3 friends, use [b1] and each friend gets [b2].',

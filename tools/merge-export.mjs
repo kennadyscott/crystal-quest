@@ -55,6 +55,53 @@ if (arg === '--init') {
 const pkg = JSON.parse(readFileSync(arg, 'utf8'));
 if (!pkg.quests || typeof pkg.quests !== 'object') { console.error('Not a Press export: no "quests" key.'); process.exit(1); }
 
+// "It rendered" is not validation: a hand-edited or corrupted package can be
+// structurally wrong yet draw a clean-looking broken quest. Refuse it here,
+// by name, before it ever reaches a student.
+function checkItem(where, it) {
+  const fail = (why) => { throw new Error(`${where}: ${why}`); };
+  if (!it || typeof it.q !== 'string' || !it.q.trim()) fail('missing stem (q)');
+  const type = it.type || 'multiple_choice';
+  if (type === 'multiple_choice') {
+    if (!Array.isArray(it.a) || it.a.length < 2) fail('multiple choice needs an options array');
+    if (typeof it.c !== 'number' || it.c < 0 || it.c >= it.a.length) fail('correct index c out of range');
+  } else if (type === 'drag_drop') {
+    if (!Array.isArray(it.zones) || it.zones.length < 2) fail('drag_drop needs ≥2 zones');
+    if (!Array.isArray(it.tokens) || it.tokens.length < 2) fail('drag_drop needs ≥2 tokens');
+    if (!it.answer || typeof it.answer !== 'object') fail('drag_drop missing answer map');
+    const placed = Object.values(it.answer).flat();
+    for (const t of it.tokens) if (!placed.includes(t.id)) fail(`token "${t.text}" is in no zone's answer`);
+  } else if (type === 'multiselect') {
+    if (!Array.isArray(it.a) || it.a.length < 3) fail('multiselect needs ≥3 options');
+    if (!Array.isArray(it.cs) || !it.cs.length || it.cs.some((k) => k < 0 || k >= it.a.length)) fail('multiselect cs invalid');
+  } else if (type === 'dropdown') {
+    const ids = Object.keys(it.blanks || {});
+    if (!ids.length) fail('dropdown has no blanks');
+    for (const b of ids) {
+      if (!(it.blanks[b].opts || []).length) fail(`blank [${b}] has no options`);
+      if (!it.q.includes(`[${b}]`)) fail(`stem never uses [${b}]`);
+    }
+  } else if (type === 'equation_entry') {
+    if (!Array.isArray(it.accept) || !it.accept.length) fail('equation_entry has an empty accept list');
+  } else if (type === 'graph_plot') {
+    if (it.kind && it.kind !== 'bars') fail(`graph_plot kind "${it.kind}" not supported by the game yet (only 'bars')`);
+    if (!Array.isArray(it.categories) || it.categories.length < 2) fail('graph_plot needs ≥2 categories');
+    const max = it.max || 10;
+    for (const c of it.categories) {
+      if (!c.label) fail('a graph category is missing its label');
+      if (typeof c.target !== 'number' || c.target < 0 || c.target > max) fail(`category "${c.label}" target out of 0..${max}`);
+    }
+  } else fail(`unknown item type "${type}" — the game cannot render it`);
+}
+for (const [title, q] of Object.entries(pkg.quests)) {
+  try {
+    ['pre', 'practice', 'post'].forEach((step) => (q[step] || []).forEach((it, i) => checkItem(`"${title}" ${step}[${i + 1}]`, it)));
+    (q.game?.problems || []).forEach((p, i) => {
+      if (!p.q || p.c === undefined || !Array.isArray(p.opts)) throw new Error(`"${title}" game[${i + 1}]: needs q, c, opts`);
+    });
+  } catch (e) { console.error('REFUSED — ' + e.message); process.exit(1); }
+}
+
 const packs = currentPacks();
 const before = Object.keys(packs).length;
 for (const [title, q] of Object.entries(pkg.quests)) {
