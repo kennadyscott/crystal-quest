@@ -727,6 +727,23 @@
   .dd-check{margin-top:12px;width:100%}
   .dd-check[disabled]{opacity:.45;cursor:not-allowed}
 
+  /* multiselect + inline-choice items */
+  .qp-pick{display:inline-block;background:var(--crystal-soft);color:var(--crystal-deep);font-weight:800;font-size:13px;
+    padding:6px 14px;border-radius:20px;margin:-8px 0 16px}
+  .qp-ans.qp-ms{position:relative}
+  .qp-ans.qp-ms.picked{border-color:var(--magenta);background:var(--magenta-soft)}
+  .qp-ans.qp-ms.picked::after{content:"✓";position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:50%;
+    background:var(--magenta);color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center;box-shadow:0 3px 8px rgba(236,24,200,.4)}
+  .qp-dcq{line-height:2.1;font-size:26px !important}
+  .qp-blank{
+    font-family:inherit;font-weight:800;font-size:19px;color:var(--crystal-deep);
+    border:2.5px solid var(--line);border-radius:12px;padding:6px 10px;background:#faf8ff;
+    margin:0 4px;vertical-align:middle;cursor:pointer;max-width:230px;
+  }
+  .qp-blank:focus{outline:none;border-color:var(--magenta)}
+  .qp-blank.good{border-color:var(--emerald);background:var(--emerald-soft);color:#0d8a56}
+  .qp-blank.bad{border-color:#f099bb;background:#ffe3ec;animation:shakeX .3s}
+
   /* ============ COLLECTION ============ */
   .col-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:8px}
   .col-item{text-align:center;padding:12px 8px;border-radius:16px;background:#f6f2fc;border:1.5px solid var(--line)}
@@ -1072,12 +1089,12 @@
   <div class="qp-body" id="diagBody"></div>
 </div>
 
-<script src="js/content.js?v=10"></script>
-<script src="js/content-packs.js?v=10"></script>
-<script src="js/state.js?v=10"></script>
-<script src="js/player.js?v=10"></script>
-<script src="js/diag.js?v=10"></script>
-<script src="js/explore.js?v=10"></script>
-<script src="js/world.js?v=10"></script>
+<script src="js/content.js?v=11"></script>
+<script src="js/content-packs.js?v=11"></script>
+<script src="js/state.js?v=11"></script>
+<script src="js/player.js?v=11"></script>
+<script src="js/diag.js?v=11"></script>
+<script src="js/explore.js?v=11"></script>
+<script src="js/world.js?v=11"></script>
 </body>
 </html>

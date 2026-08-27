@@ -17,9 +17,14 @@ function shuffle(arr){
 }
 function shuffleMC(item){
   if(!item || !item.a) return item;
-  const pairs = item.a.map((text,i)=>({ text, ok:i===item.c }));
+  const pairs = item.a.map((text,i)=>({ text, i }));
   const sh = shuffle(pairs);
-  return Object.assign({}, item, { a: sh.map(p=>p.text), c: sh.findIndex(p=>p.ok) });
+  if(item.type === 'multiselect'){
+    const cs = (item.cs||[]).map(ci => sh.findIndex(p=>p.i===ci)).sort((x,y)=>x-y);
+    return Object.assign({}, item, { a: sh.map(p=>p.text), cs });
+  }
+  if(item.type && item.type !== 'multiple_choice') return item;  // dd, dropdown: untouched
+  return Object.assign({}, item, { a: sh.map(p=>p.text), c: sh.findIndex(p=>p.i===item.c) });
 }
 
 function sfx(kind){
@@ -144,7 +149,135 @@ function qCard(kicker, item, showHint){
 }
 
 function itemCard(kicker, item, showHint){
-  return item && item.type==='drag_drop' ? ddCard(kicker, item) : qCard(kicker, item, showHint);
+  if(item && item.type==='drag_drop')  return ddCard(kicker, item);
+  if(item && item.type==='multiselect') return msCard(kicker, item);
+  if(item && item.type==='dropdown')   return dcCard(kicker, item);
+  return qCard(kicker, item, showHint);
+}
+
+/* ---- multiselect item renderer ----
+   { type:'multiselect', q, a:[options], cs:[correct indices], hint? }
+   The stem should say how many to pick; we also show a "Pick N" chip.    */
+function msInitIfNeeded(item){
+  const key = 'ms' + QP.step + ':' + QP.i;
+  if(QP.msKey === key) return;
+  QP.msKey = key;
+  QP.msSel = new Set();
+}
+function msCard(kicker, item){
+  msInitIfNeeded(item);
+  const need = (item.cs||[]).length;
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q">${item.q}</div>
+    <div class="qp-pick">Pick ${need}</div>
+    <div class="qp-answers">${item.a.map((o,k)=>
+      `<button class="qp-ans qp-ms${QP.msSel.has(k)?' picked':''}" id="ans${k}" onclick="qpMSToggle(${k})">${o}</button>`).join('')}</div>
+    <button class="btn btn-primary dd-check" onclick="qpMSCheck()"${QP.msSel.size===need?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpMSToggle(k){
+  if(!QP || QP.busy) return;
+  if(QP.msSel.has(k)) QP.msSel.delete(k); else QP.msSel.add(k);
+  sfx('click');
+  renderQP();
+}
+function qpMSCheck(){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  const sel = [...QP.msSel].sort((a,b)=>a-b);
+  const want = (item.cs||[]).slice().sort((a,b)=>a-b);
+  const good = sel.length===want.length && want.every((v,i)=>v===sel[i]);
+  item.a.forEach((_,k)=>{
+    const el = $('#ans'+k); if(!el) return;
+    if(want.includes(k) && QP.msSel.has(k)) el.classList.add('correct');
+    else if(QP.msSel.has(k)) el.classList.add('wrong');
+  });
+  sfx(good?'correct':'wrong');
+  if(QP.step===2){
+    if(!good){
+      QP.firstTry = false;
+      QP.busy = true;
+      say('Almost — check the marked ones!');
+      setTimeout(()=>{
+        [...QP.msSel].forEach(k=>{ if(!want.includes(k)) QP.msSel.delete(k); });
+        QP.busy = false;
+        renderQP();
+        const hb = $('#qpHintBox');
+        if(hb) hb.innerHTML = item.hint ? `<div class="qp-hint">💡 ${item.hint}</div>` : `<div class="qp-hint">💡 The right picks stayed — find the rest!</div>`;
+      }, 900);
+      return;
+    }
+    qpPracticeAdvance(document.querySelector('.dd-check'));
+    return;
+  }
+  qpOneShotAdvance(good);
+}
+
+/* ---- inline choice (dropdown-in-sentence) item renderer ----
+   { type:'dropdown', q:'A triangle has [b1] sides.', blanks:{b1:{opts:[...], c:0}}, hint? } */
+function dcInitIfNeeded(item){
+  const key = 'dc' + QP.step + ':' + QP.i;
+  if(QP.dcKey === key) return;
+  QP.dcKey = key;
+  QP.dcSel = {};
+}
+function dcCard(kicker, item){
+  dcInitIfNeeded(item);
+  const ids = Object.keys(item.blanks||{});
+  const stem = item.q.replace(/\[(b\d+)\]/g, (_, b)=>{
+    const bl = item.blanks[b]; if(!bl) return '____';
+    return `<select class="qp-blank" id="blank-${b}" onchange="qpDCPick('${b}', this)">
+      <option value="">— pick —</option>
+      ${bl.opts.map((o,i)=>`<option value="${i}"${QP.dcSel[b]===i?' selected':''}>${o}</option>`).join('')}
+    </select>`;
+  });
+  const allPicked = ids.every(b=>QP.dcSel[b]!==undefined);
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q qp-dcq">${stem}</div>
+    <button class="btn btn-primary dd-check" onclick="qpDCCheck()"${allPicked?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpDCPick(b, el){
+  if(!QP || QP.busy) return;
+  if(el.value==='') delete QP.dcSel[b]; else QP.dcSel[b] = Number(el.value);
+  sfx('click');
+  renderQP();
+}
+function qpDCCheck(){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  const ids = Object.keys(item.blanks||{});
+  const wrongIds = ids.filter(b=>QP.dcSel[b] !== item.blanks[b].c);
+  const good = wrongIds.length===0;
+  ids.forEach(b=>{
+    const el = $('#blank-'+b); if(!el) return;
+    el.classList.add(wrongIds.includes(b)?'bad':'good');
+  });
+  sfx(good?'correct':'wrong');
+  if(QP.step===2){
+    if(!good){
+      QP.firstTry = false;
+      QP.busy = true;
+      say('So close — fix the red ones!');
+      setTimeout(()=>{
+        wrongIds.forEach(b=>{ delete QP.dcSel[b]; });
+        QP.busy = false;
+        renderQP();
+        const hb = $('#qpHintBox');
+        if(hb) hb.innerHTML = item.hint ? `<div class="qp-hint">💡 ${item.hint}</div>` : `<div class="qp-hint">💡 Read the sentence again with each choice!</div>`;
+      }, 900);
+      return;
+    }
+    qpPracticeAdvance(document.querySelector('.dd-check'));
+    return;
+  }
+  qpOneShotAdvance(good);
 }
 
 function renderQP(){
@@ -533,14 +666,44 @@ const DD_DEMO_QUEST = {
     { q:'20 ÷ 4 = ?', a:['4','6','5','8'], c:2 }
   ]
 };
+/* ---- multiselect + inline-choice demo (dev-only): index.html?demo=items ---- */
+const ITEMS_DEMO_QUEST = {
+  land: 'mult',
+  pre: [
+    { type:'multiselect', q:'Pick the TWO facts that equal 12.',
+      a:['3 × 4','2 × 5','6 × 2','4 × 2'], cs:[0,2] },
+    { type:'dropdown', q:'4 × 3 is the same as [b1] groups of [b2].',
+      blanks:{ b1:{opts:['4','3','7'], c:0}, b2:{opts:['4','3','12'], c:1} } },
+    { q:'6 × 2 = ?', a:['8','10','12','14'], c:2 }
+  ],
+  lesson: '<div class="qp-kicker">Lesson</div><h3 class="qp-lt">More than one answer can be right!</h3><p class="qp-lp">Some questions ask you to pick TWO answers, or to finish a sentence by choosing the right words. Read carefully — the question always tells you how many to pick.</p><button class="btn btn-primary" onclick="qpNext()">Got it — let\'s practice! ✏️</button>',
+  practice: [
+    { type:'multiselect', q:'Pick the TWO numbers that are multiples of 4.',
+      a:['12','14','20','18'], cs:[0,2],
+      hint:'Count by 4s: 4, 8, 12, 16, 20 — which two are on the list?' },
+    { type:'dropdown', q:'A number times [b1] is always [b2] the number itself.',
+      blanks:{ b1:{opts:['1','2','0'], c:0}, b2:{opts:['double','equal to','less than'], c:1} },
+      hint:'Multiplying by 1 keeps a number exactly the same.' }
+  ],
+  game: { type:'smash', intro:'Quick smash round!', time:30,
+    problems:[ {q:'7 × 3', c:21, opts:[18,21,24,27]}, {q:'5 × 5', c:25, opts:[20,25,30,15]} ] },
+  post: [
+    { type:'multiselect', q:'Pick the TWO facts that equal 18.',
+      a:['9 × 2','8 × 2','6 × 3','5 × 4'], cs:[0,2] },
+    { type:'dropdown', q:'To share 15 stickers among 3 friends, use [b1] and each friend gets [b2].',
+      blanks:{ b1:{opts:['division','addition'], c:0}, b2:{opts:['3','5','12'], c:1} } },
+    { q:'9 × 2 = ?', a:['16','18','20','11'], c:1 }
+  ]
+};
 try{
   const _qp = new URLSearchParams(location.search);
-  if(_qp.get('demo') === 'dragdrop'){
+  const _demo = { dragdrop:['Sorting Showcase', DD_DEMO_QUEST], items:['Item Showcase', ITEMS_DEMO_QUEST] }[_qp.get('demo')];
+  if(_demo){
     window.addEventListener('load', ()=>{
-      QUEST_CONTENT['Sorting Showcase'] = DD_DEMO_QUEST;
+      QUEST_CONTENT[_demo[0]] = _demo[1];
       const t = document.getElementById('titleScreen');
       if(t) t.classList.add('gone');
-      setTimeout(()=>launchQuest('Sorting Showcase'), 350);
+      setTimeout(()=>launchQuest(_demo[0]), 350);
     });
   }
 }catch(e){}
