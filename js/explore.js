@@ -441,17 +441,31 @@ function initExplore(){
 function renderAvatarGrid(hostId, selectedId){
   const host = $('#'+hostId); if(!host) return;
   const cur = selectedId || (tempAv && tempAv.id) || 'mai';
-  host.innerHTML = AVATARS.map(a =>
-    `<button type="button" class="av-pick${a.id===cur?' sel':''}" data-id="${a.id}">
-      <img src="${avatarSrc(a.id)}" alt="Adventurer option">
-    </button>`
-  ).join('');
-  host.querySelectorAll('.av-pick').forEach(btn => {
+  // one-row carousel: arrows scroll the track; selection toggles classes in
+  // place (no re-render) so the scroll position never jumps under a tap
+  host.innerHTML = `
+    <button type="button" class="av-arrow" aria-label="Previous adventurers">‹</button>
+    <div class="av-track">${AVATARS.map(a =>
+      `<button type="button" class="av-pick${a.id===cur?' sel':''}" data-id="${a.id}">
+        <img src="${avatarSrc(a.id)}" alt="Adventurer option">
+      </button>`).join('')}</div>
+    <button type="button" class="av-arrow" aria-label="More adventurers">›</button>`;
+  const track = host.querySelector('.av-track');
+  const [back, fwd] = host.querySelectorAll('.av-arrow');
+  // instant scroll: 'smooth' silently no-ops in some embedded browsers,
+  // and the proximity snap settles the landing anyway
+  const step = () => (track.querySelector('.av-pick')?.offsetWidth || 160) + 12;
+  back.onclick = () => track.scrollBy({ left: -step() });
+  fwd.onclick  = () => track.scrollBy({ left:  step() });
+  track.querySelectorAll('.av-pick').forEach(btn => {
     btn.onclick = () => {
       tempAv = { id: btn.dataset.id };
-      renderAvatarGrid(hostId, tempAv.id);
+      track.querySelectorAll('.av-pick').forEach(b => b.classList.toggle('sel', b === btn));
       const prev = $('#setupPrevImg'); if(prev) prev.src = avatarSrc(tempAv.id);
       const avp = $('#avPrevImg'); if(avp) avp.src = avatarSrc(tempAv.id);
     };
   });
+  // start with the selected adventurer centered
+  const sel = track.querySelector('.av-pick.sel');
+  if(sel) track.scrollLeft = sel.offsetLeft - track.clientWidth/2 + sel.offsetWidth/2;
 }
