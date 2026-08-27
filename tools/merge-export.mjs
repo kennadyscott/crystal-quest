@@ -69,8 +69,7 @@ function checkItem(where, it) {
       if (!ok) fail('an option has neither text nor a figure');
     }
     if (typeof it.c !== 'number' || it.c < 0 || it.c >= it.a.length) fail('correct index c out of range');
-  }
-  if (it.figure && !it.figure.svg) fail('figure present but has no svg'); else if (type === 'drag_drop') {
+  } else if (type === 'drag_drop') {
     if (!Array.isArray(it.zones) || it.zones.length < 2) fail('drag_drop needs ≥2 zones');
     if (!Array.isArray(it.tokens) || it.tokens.length < 2) fail('drag_drop needs ≥2 tokens');
     if (!it.answer || typeof it.answer !== 'object') fail('drag_drop missing answer map');
@@ -124,6 +123,7 @@ function checkItem(where, it) {
     if (spans.length < 2) fail('hot_text needs ≥2 tappable spans');
     if (!spans.some((x) => x.correct)) fail('hot_text has no correct span');
   } else fail(`unknown item type "${type}" — the game cannot render it`);
+  if (it.figure && !it.figure.svg) fail('figure present but has no svg');
 }
 for (const [title, q] of Object.entries(pkg.quests)) {
   try {
