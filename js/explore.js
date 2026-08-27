@@ -442,9 +442,8 @@ function renderAvatarGrid(hostId, selectedId){
   const host = $('#'+hostId); if(!host) return;
   const cur = selectedId || (tempAv && tempAv.id) || 'mai';
   host.innerHTML = AVATARS.map(a =>
-    `<button type="button" class="av-pick${a.id===cur?' sel':''}" data-id="${a.id}" title="${a.label}">
-      <img src="${avatarSrc(a.id)}" alt="${a.label}">
-      <span>${a.label}</span>
+    `<button type="button" class="av-pick${a.id===cur?' sel':''}" data-id="${a.id}">
+      <img src="${avatarSrc(a.id)}" alt="Adventurer option">
     </button>`
   ).join('');
   host.querySelectorAll('.av-pick').forEach(btn => {
