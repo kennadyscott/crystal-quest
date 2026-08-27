@@ -64,8 +64,13 @@ function checkItem(where, it) {
   const type = it.type || 'multiple_choice';
   if (type === 'multiple_choice') {
     if (!Array.isArray(it.a) || it.a.length < 2) fail('multiple choice needs an options array');
+    for (const o of it.a) {
+      const ok = typeof o === 'string' ? o.length > 0 : (o && (o.text || o.svg));
+      if (!ok) fail('an option has neither text nor a figure');
+    }
     if (typeof it.c !== 'number' || it.c < 0 || it.c >= it.a.length) fail('correct index c out of range');
-  } else if (type === 'drag_drop') {
+  }
+  if (it.figure && !it.figure.svg) fail('figure present but has no svg'); else if (type === 'drag_drop') {
     if (!Array.isArray(it.zones) || it.zones.length < 2) fail('drag_drop needs ≥2 zones');
     if (!Array.isArray(it.tokens) || it.tokens.length < 2) fail('drag_drop needs ≥2 tokens');
     if (!it.answer || typeof it.answer !== 'object') fail('drag_drop missing answer map');

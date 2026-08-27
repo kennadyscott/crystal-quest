@@ -138,11 +138,24 @@ function qList(){
   return QP.post;
 }
 
+/* stem figure (inline SVG from the builder's math models) + option bodies
+   that may be plain text or {text?, svg?, alt?} — "selectable image" MC. */
+function figHtml(item){
+  return item && item.figure && item.figure.svg
+    ? `<div class="qp-fig" role="img" aria-label="${(item.figure.alt||'').replace(/"/g,'&quot;')}">${item.figure.svg}</div>` : '';
+}
+function optBody(o){
+  if(o && typeof o === 'object'){
+    return `${o.svg ? `<span class="qp-optfig">${o.svg}</span>` : ''}${o.text ? `<span>${o.text}</span>` : ''}`;
+  }
+  return o;
+}
 function qCard(kicker, item, showHint){
   return `<div class="qp-card">
     <div class="qp-kicker">${kicker}</div>
     <div class="qp-q">${item.q}</div>
-    <div class="qp-answers">${item.a.map((o,k)=>`<button class="qp-ans" id="ans${k}" onclick="qpAns(${k})">${o}</button>`).join('')}</div>
+    ${figHtml(item)}
+    <div class="qp-answers">${item.a.map((o,k)=>`<button class="qp-ans${o&&o.svg?' has-fig':''}" id="ans${k}" onclick="qpAns(${k})">${optBody(o)}</button>`).join('')}</div>
     <div id="qpHintBox">${showHint&&item.hint?`<div class="qp-hint">💡 ${item.hint}</div>`:''}</div>
     ${dots(qList().length, QP.i)}
   </div>`;
@@ -254,6 +267,7 @@ function eqCard(kicker, item){
   return `<div class="qp-card">
     <div class="qp-kicker">${kicker}</div>
     <div class="qp-q">${item.q}</div>
+    ${figHtml(item)}
     <div class="qp-eq-display" id="eqDisplay">${QP.eqStr || '<span class="eq-ghost">Build your answer…</span>'}</div>
     <div class="qp-keypad">
       ${EQ_KEYS.map(row => row.map(k =>
@@ -328,9 +342,10 @@ function msCard(kicker, item){
   return `<div class="qp-card">
     <div class="qp-kicker">${kicker}</div>
     <div class="qp-q">${item.q}</div>
+    ${figHtml(item)}
     <div class="qp-pick">Pick ${need}</div>
     <div class="qp-answers">${item.a.map((o,k)=>
-      `<button class="qp-ans qp-ms${QP.msSel.has(k)?' picked':''}" id="ans${k}" onclick="qpMSToggle(${k})">${o}</button>`).join('')}</div>
+      `<button class="qp-ans qp-ms${QP.msSel.has(k)?' picked':''}${o&&o.svg?' has-fig':''}" id="ans${k}" onclick="qpMSToggle(${k})">${optBody(o)}</button>`).join('')}</div>
     <button class="btn btn-primary dd-check" onclick="qpMSCheck()"${QP.msSel.size===need?'':' disabled'}>Check my answer ✓</button>
     <div id="qpHintBox"></div>
     ${dots(qList().length, QP.i)}
@@ -396,6 +411,7 @@ function dcCard(kicker, item){
   return `<div class="qp-card">
     <div class="qp-kicker">${kicker}</div>
     <div class="qp-q qp-dcq">${stem}</div>
+    ${figHtml(item)}
     <button class="btn btn-primary dd-check" onclick="qpDCCheck()"${allPicked?'':' disabled'}>Check my answer ✓</button>
     <div id="qpHintBox"></div>
     ${dots(qList().length, QP.i)}
@@ -548,6 +564,7 @@ function ddCard(kicker, item){
   return `<div class="qp-card dd-card">
     <div class="qp-kicker">${kicker}</div>
     <div class="qp-q dd-q">${item.q}</div>
+    ${figHtml(item)}
     <div class="dd-zones">${zones}</div>
     <div class="dd-pool">${pool || '<span class="dd-empty">All placed — check your answer!</span>'}</div>
     <div class="dd-help">Tap a crystal, then tap the group it belongs in. Tap a placed crystal to take it back.</div>
@@ -851,6 +868,11 @@ const ITEMS_DEMO_QUEST = {
   game: { type:'smash', intro:'Quick smash round!', time:30,
     problems:[ {q:'7 × 3', c:21, opts:[18,21,24,27]}, {q:'5 × 5', c:25, opts:[20,25,30,15]} ] },
   post: [
+    { q:'Which bar shows 3/4 shaded?', c:1,
+      a:[ {svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 40'><rect x='2' y='6' width='116' height='28' fill='none' stroke='#6d35ff' stroke-width='2'/><rect x='2' y='6' width='29' height='28' fill='#ec18c8'/></svg>", alt:'1/4 shaded'},
+          {svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 40'><rect x='2' y='6' width='116' height='28' fill='none' stroke='#6d35ff' stroke-width='2'/><rect x='2' y='6' width='87' height='28' fill='#ec18c8'/></svg>", alt:'3/4 shaded'},
+          {svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 40'><rect x='2' y='6' width='116' height='28' fill='none' stroke='#6d35ff' stroke-width='2'/><rect x='2' y='6' width='58' height='28' fill='#ec18c8'/></svg>", alt:'2/4 shaded'},
+          'None of these' ] },
     { type:'graph_plot', kind:'bars', max:6,
       q:'The class voted for pets: cats 4, dogs 5, fish 2. Build the bar graph!',
       categories:[{label:'Cats', target:4},{label:'Dogs', target:5},{label:'Fish', target:2}] },

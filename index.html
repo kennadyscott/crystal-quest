@@ -765,6 +765,13 @@
   .qp-key.op{background:var(--crystal-soft);color:var(--crystal-deep)}
   .qp-key.util{grid-column:span 2;background:#f6f2fc;color:var(--ink-soft);font-size:16px}
 
+  /* item figures (inline SVG math models) + selectable-image options */
+  .qp-fig{max-width:440px;margin:-6px auto 16px}
+  .qp-fig svg{width:100%;height:auto;display:block}
+  .qp-ans.has-fig{display:flex;flex-direction:column;gap:6px;align-items:center;font-size:16px;padding:12px}
+  .qp-optfig{display:block;width:100%;max-width:200px}
+  .qp-optfig svg{width:100%;height:auto;display:block;pointer-events:none}
+
   /* bar-graph builder */
   .gp-card{max-width:660px}
   .gp-chart{position:relative;height:240px;margin:4px auto 14px;max-width:460px}
@@ -1131,12 +1138,12 @@
   <div class="qp-body" id="diagBody"></div>
 </div>
 
-<script src="js/content.js?v=13"></script>
-<script src="js/content-packs.js?v=13"></script>
-<script src="js/state.js?v=13"></script>
-<script src="js/player.js?v=13"></script>
-<script src="js/diag.js?v=13"></script>
-<script src="js/explore.js?v=13"></script>
-<script src="js/world.js?v=13"></script>
+<script src="js/content.js?v=14"></script>
+<script src="js/content-packs.js?v=14"></script>
+<script src="js/state.js?v=14"></script>
+<script src="js/player.js?v=14"></script>
+<script src="js/diag.js?v=14"></script>
+<script src="js/explore.js?v=14"></script>
+<script src="js/world.js?v=14"></script>
 </body>
 </html>
