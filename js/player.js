@@ -166,8 +166,298 @@ function itemCard(kicker, item, showHint){
   if(item && item.type==='multiselect') return msCard(kicker, item);
   if(item && item.type==='dropdown')   return dcCard(kicker, item);
   if(item && item.type==='equation_entry') return eqCard(kicker, item);
-  if(item && item.type==='graph_plot') return gpCard(kicker, item);
+  if(item && item.type==='graph_plot') return (item.kind==='points' ? ptCard(kicker, item) : gpCard(kicker, item));
+  if(item && item.type==='hot_spot') return hsCard(kicker, item);
+  if(item && item.type==='match_grid') return mgCard(kicker, item);
+  if(item && item.type==='number_line_plot') return nlCard(kicker, item);
+  if(item && item.type==='text_entry') return teCard(kicker, item);
+  if(item && item.type==='fraction_model') return fmCard(kicker, item);
+  if(item && item.type==='hot_text') return htCard(kicker, item);
   return qCard(kicker, item, showHint);
+}
+
+/* ---- shared per-item state + shared check plumbing for the tail types ---- */
+function stInit(prefix, item, mk){
+  const key = prefix + QP.step + ':' + QP.i;
+  if(QP.stKey === key) return QP.st;
+  QP.stKey = key;
+  QP.st = mk(item);
+  return QP.st;
+}
+function stCheck(good, wrongReset, hintFallback){
+  const item = qList()[QP.i];
+  sfx(good?'correct':'wrong');
+  if(QP.step===2){
+    if(!good){
+      QP.firstTry = false;
+      QP.busy = true;
+      say('So close — look again!');
+      setTimeout(()=>{
+        if(wrongReset) wrongReset();
+        QP.busy = false;
+        renderQP();
+        const hb = $('#qpHintBox');
+        if(hb) hb.innerHTML = item.hint ? `<div class="qp-hint">💡 ${item.hint}</div>` : `<div class="qp-hint">💡 ${hintFallback}</div>`;
+      }, 900);
+      return;
+    }
+    qpPracticeAdvance(document.querySelector('.dd-check'));
+    return;
+  }
+  qpOneShotAdvance(good);
+}
+const setEq = (a,b) => a.length===b.length && a.slice().sort().every((v,i)=>v===b.slice().sort()[i]);
+
+/* ---- hot spot: tap regions on a figure ---- */
+function hsCard(kicker, item){
+  const st = stInit('hs', item, ()=>({sel:new Set()}));
+  const need = (item.correct||[]).length;
+  const regions = item.regions.map(r=>
+    `<button class="hs-region${st.sel.has(r.id)?' on':''}" style="left:${r.x}%;top:${r.y}%;width:${r.r*2}%;padding-top:${r.r*2}%" onclick="qpHS('${r.id}')" aria-label="${(r.label||r.id)}"></button>`).join('');
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q">${item.q}</div>
+    <div class="qp-pick">Pick ${need}</div>
+    <div class="qp-fig hs-fig" role="img" aria-label="${(item.figure.alt||'').replace(/"/g,'&quot;')}">${item.figure.svg}${regions}</div>
+    <button class="btn btn-primary dd-check" onclick="qpHSCheck()"${st.sel.size===need?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpHS(id){
+  if(!QP || QP.busy) return;
+  const st = QP.st;
+  if(st.sel.has(id)) st.sel.delete(id); else st.sel.add(id);
+  sfx('click');
+  renderQP();
+}
+function qpHSCheck(){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  const sel = [...QP.st.sel];
+  const good = setEq(sel, item.correct||[]);
+  item.regions.forEach(r=>{
+    const el = document.querySelector(`.hs-region[aria-label="${r.label||r.id}"]`);
+    if(el && QP.st.sel.has(r.id)) el.classList.add((item.correct||[]).includes(r.id)?'good':'bad');
+  });
+  stCheck(good, ()=>{ [...QP.st.sel].forEach(id=>{ if(!(item.correct||[]).includes(id)) QP.st.sel.delete(id); }); }, 'The right taps stayed — find the rest!');
+}
+
+/* ---- match table grid: one column per row ---- */
+function mgCard(kicker, item){
+  const st = stInit('mg', item, ()=>({pick:{}}));
+  const head = `<tr><th></th>${item.cols.map(c=>`<th>${c.label}</th>`).join('')}</tr>`;
+  const rows = item.rows.map(r=>
+    `<tr><td class="mg-rowlbl">${r.label}</td>${item.cols.map(c=>
+      `<td><button class="mg-cell${st.pick[r.id]===c.id?' on':''}" id="mg-${r.id}-${c.id}" onclick="qpMG('${r.id}','${c.id}')" aria-label="${r.label}: ${c.label}"></button></td>`).join('')}</tr>`).join('');
+  const all = item.rows.every(r=>st.pick[r.id]);
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q">${item.q}</div>
+    <table class="mg-table">${head}${rows}</table>
+    <button class="btn btn-primary dd-check" onclick="qpMGCheck()"${all?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpMG(rid, cid){
+  if(!QP || QP.busy) return;
+  QP.st.pick[rid] = QP.st.pick[rid]===cid ? undefined : cid;
+  sfx('click');
+  renderQP();
+}
+function qpMGCheck(){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  const wrong = item.rows.filter(r=>QP.st.pick[r.id] !== item.answer[r.id]).map(r=>r.id);
+  const good = wrong.length===0;
+  item.rows.forEach(r=>{
+    const el = $('#mg-'+r.id+'-'+QP.st.pick[r.id]);
+    if(el) el.classList.add(wrong.includes(r.id)?'bad':'good');
+  });
+  stCheck(good, ()=>{ wrong.forEach(rid=>{ delete QP.st.pick[rid]; }); }, 'The red rows bounced back — try them again!');
+}
+
+/* ---- number line: tap to place a point ---- */
+function nlCard(kicker, item){
+  const st = stInit('nl', item, ()=>({val:null}));
+  const min = item.min ?? 0, max = item.max ?? 10, step = item.step || 1;
+  const ticks = [];
+  for(let v=min; v<=max+1e-9; v+=step){
+    const x = ((v-min)/(max-min))*100;
+    const whole = Math.abs(v - Math.round(v)) < 1e-9;
+    ticks.push(`<div class="nl-tick${whole?' whole':''}" style="left:${x}%">${whole?`<span>${Math.round(v)}</span>`:''}</div>`);
+  }
+  const marker = st.val===null ? '' : `<div class="nl-marker" id="nlMarker" style="left:${((st.val-min)/(max-min))*100}%"></div>`;
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q">${item.q}</div>
+    <div class="nl-wrap" onclick="qpNL(event)"><div class="nl-line"></div>${ticks.join('')}${marker}</div>
+    <div class="dd-help">Tap the number line to place your point.${st.val!==null?` You picked <b>${st.val}</b>.`:''}</div>
+    <button class="btn btn-primary dd-check" onclick="qpNLCheck()"${st.val!==null?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpNL(ev){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  const min = item.min ?? 0, max = item.max ?? 10, step = item.step || 1;
+  const wrap = ev.currentTarget.getBoundingClientRect();
+  const frac = Math.min(1, Math.max(0, (ev.clientX - wrap.left) / wrap.width));
+  const raw = min + frac*(max-min);
+  const snapped = Math.round((raw - min)/step)*step + min;
+  QP.st.val = Math.round(snapped*1000)/1000;
+  sfx('click');
+  renderQP();
+}
+function qpNLCheck(){
+  if(!QP || QP.busy || QP.st.val===null) return;
+  const item = qList()[QP.i];
+  const tol = item.tolerance ?? 0.001;
+  const good = Math.abs(QP.st.val - item.target) <= tol;
+  const m = $('#nlMarker'); if(m) m.classList.add(good?'good':'bad');
+  stCheck(good, ()=>{ QP.st.val = null; }, 'Count the tick marks carefully, then tap again.');
+}
+
+/* ---- text entry: type a word or phrase ---- */
+const teNorm = (x) => String(x??'').trim().toLowerCase().replace(/\s+/g,' ');
+function teCard(kicker, item){
+  const st = stInit('te', item, ()=>({val:''}));
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q">${item.q}</div>
+    <input class="te-input" id="teInput" type="text" autocomplete="off" value="${st.val.replace(/"/g,'&quot;')}" oninput="QP.st.val=this.value; const b=document.querySelector('.dd-check'); if(b) b.disabled=!this.value.trim();" placeholder="Type your answer…">
+    <button class="btn btn-primary dd-check" onclick="qpTECheck()"${st.val.trim()?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpTECheck(){
+  if(!QP || QP.busy || !QP.st.val.trim()) return;
+  const item = qList()[QP.i];
+  const good = (item.accept||[]).some(a=>teNorm(a)===teNorm(QP.st.val));
+  const el = $('#teInput'); if(el) el.classList.add(good?'good':'bad');
+  stCheck(good, ()=>{}, 'Check your spelling and try again!');
+}
+
+/* ---- fraction model: tap parts to shade ---- */
+function fmCard(kicker, item){
+  const st = stInit('fm', item, ()=>({on:new Set()}));
+  const parts = item.parts || 4;
+  let fig;
+  if(item.shape==='circle'){
+    const R=70, C=80;
+    const wedge = (i)=>{
+      const a0 = (i/parts)*2*Math.PI - Math.PI/2, a1 = ((i+1)/parts)*2*Math.PI - Math.PI/2;
+      const x0=C+R*Math.cos(a0), y0=C+R*Math.sin(a0), x1=C+R*Math.cos(a1), y1=C+R*Math.sin(a1);
+      return `<path d="M${C},${C} L${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 0 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" class="fm-part${st.on.has(i)?' on':''}" onclick="qpFM(${i})"/>`;
+    };
+    fig = `<svg viewBox="0 0 160 160" class="fm-svg">${Array.from({length:parts},(_,i)=>wedge(i)).join('')}</svg>`;
+  } else {
+    fig = `<div class="fm-bar">${Array.from({length:parts},(_,i)=>
+      `<button class="fm-seg${st.on.has(i)?' on':''}" onclick="qpFM(${i})" aria-label="part ${i+1}"></button>`).join('')}</div>`;
+  }
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q">${item.q}</div>
+    ${fig}
+    <div class="dd-help">Tap parts to shade them. Shaded: <b>${st.on.size}</b> of ${parts}</div>
+    <button class="btn btn-primary dd-check" onclick="qpFMCheck()"${st.on.size>0?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpFM(i){
+  if(!QP || QP.busy) return;
+  if(QP.st.on.has(i)) QP.st.on.delete(i); else QP.st.on.add(i);
+  sfx('click');
+  renderQP();
+}
+function qpFMCheck(){
+  if(!QP || QP.busy || !QP.st.on.size) return;
+  const item = qList()[QP.i];
+  const good = QP.st.on.size === item.target;
+  stCheck(good, ()=>{ QP.st.on.clear(); }, `Shade exactly ${item.target} part${item.target===1?'':'s'}.`);
+}
+
+/* ---- coordinate points: tap grid intersections ---- */
+function ptCard(kicker, item){
+  const st = stInit('pt', item, ()=>({pts:[]}));
+  const G = item.gridMax || 10, need = (item.targets||[]).length;
+  const size = 300, cell = size/G;
+  let grid = '';
+  for(let i=0;i<=G;i++){
+    grid += `<line x1="${i*cell}" y1="0" x2="${i*cell}" y2="${size}" class="pt-line"/><line x1="0" y1="${i*cell}" x2="${size}" y2="${i*cell}" class="pt-line"/>`;
+    if(i<G||i===G){ grid += `<text x="${i*cell}" y="${size+16}" class="pt-lbl" text-anchor="middle">${i}</text><text x="-8" y="${size-i*cell+4}" class="pt-lbl" text-anchor="end">${i}</text>`; }
+  }
+  const marks = st.pts.map(p=>`<circle cx="${p.x*cell}" cy="${size-p.y*cell}" r="9" class="pt-dot" data-x="${p.x}" data-y="${p.y}"/>`).join('');
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q">${item.q}</div>
+    <div class="qp-pick">Place ${need} point${need===1?'':'s'}</div>
+    <svg viewBox="-24 -8 ${size+40} ${size+32}" class="pt-svg" onclick="qpPT(event, ${G}, ${size})">${grid}${marks}</svg>
+    <button class="btn btn-primary dd-check" onclick="qpPTCheck()"${st.pts.length===need?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpPT(ev, G, size){
+  if(!QP || QP.busy) return;
+  const svg = ev.currentTarget;
+  const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const cell = size/G;
+  const x = Math.round(p.x/cell), y = Math.round((size-p.y)/cell);
+  if(x<0||y<0||x>G||y>G) return;
+  const st = QP.st;
+  const at = st.pts.findIndex(q=>q.x===x&&q.y===y);
+  if(at>=0) st.pts.splice(at,1); else st.pts.push({x,y});
+  sfx('click');
+  renderQP();
+}
+function qpPTCheck(){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  const key = (p)=>p.x+','+p.y;
+  const good = setEq(QP.st.pts.map(key), (item.targets||[]).map(key));
+  document.querySelectorAll('.pt-dot').forEach(d=>{
+    const hit = (item.targets||[]).some(t=>String(t.x)===d.dataset.x && String(t.y)===d.dataset.y);
+    d.classList.add(hit?'good':'bad');
+  });
+  stCheck(good, ()=>{ QP.st.pts = QP.st.pts.filter(p=>(item.targets||[]).some(t=>t.x===p.x&&t.y===p.y)); }, 'Remember: across first (x), then up (y)!');
+}
+
+/* ---- hot text: tap the words/phrases ---- */
+function htCard(kicker, item){
+  const st = stInit('ht', item, ()=>({sel:new Set()}));
+  const spans = item.parts.filter(p=>typeof p==='object');
+  const need = spans.filter(p=>p.correct).length;
+  const bodyHtml = item.parts.map(p=> typeof p==='string' ? p :
+    `<button class="ht-span${st.sel.has(p.id)?' on':''}" id="ht-${p.id}" onclick="qpHT('${p.id}')">${p.text}</button>`).join('');
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q" style="font-size:22px">${item.q}</div>
+    <div class="qp-pick">Pick ${need}</div>
+    <div class="ht-text">${bodyHtml}</div>
+    <button class="btn btn-primary dd-check" onclick="qpHTCheck()"${st.sel.size===need?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpHT(id){
+  if(!QP || QP.busy) return;
+  if(QP.st.sel.has(id)) QP.st.sel.delete(id); else QP.st.sel.add(id);
+  sfx('click');
+  renderQP();
+}
+function qpHTCheck(){
+  if(!QP || QP.busy) return;
+  const item = qList()[QP.i];
+  const correct = item.parts.filter(p=>typeof p==='object'&&p.correct).map(p=>p.id);
+  const good = setEq([...QP.st.sel], correct);
+  [...QP.st.sel].forEach(id=>{ const el=$('#ht-'+id); if(el) el.classList.add(correct.includes(id)?'good':'bad'); });
+  stCheck(good, ()=>{ [...QP.st.sel].forEach(id=>{ if(!correct.includes(id)) QP.st.sel.delete(id); }); }, 'Your right picks stayed — reread for the rest!');
 }
 
 /* ---- graphing item renderer (STAAR "graphing", Grade-3 flavor) ----
@@ -883,9 +1173,41 @@ const ITEMS_DEMO_QUEST = {
     { q:'9 × 2 = ?', a:['16','18','20','11'], c:1 }
   ]
 };
+const TAIL_DEMO_QUEST = {
+  land: 'geo',
+  pre: [
+    { type:'hot_spot', q:'Tap the TWO shapes with straight sides only.',
+      figure:{ svg:"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 100'><rect x='10' y='20' width='60' height='60' fill='#f4d7f0' stroke='#6d35ff'/><circle cx='150' cy='50' r='32' fill='#f4d7f0' stroke='#6d35ff'/><polygon points='230,80 260,20 290,80' fill='#f4d7f0' stroke='#6d35ff'/></svg>", alt:'A square, a circle, and a triangle' },
+      regions:[{id:'r1',x:13,y:50,r:12,label:'square'},{id:'r2',x:50,y:50,r:12,label:'circle'},{id:'r3',x:87,y:50,r:12,label:'triangle'}],
+      correct:['r1','r3'] },
+    { type:'match_grid', q:'Match each fact to its answer.',
+      rows:[{id:'row1',label:'3 × 4'},{id:'row2',label:'2 × 9'},{id:'row3',label:'4 × 4'}],
+      cols:[{id:'colA',label:'12'},{id:'colB',label:'18'},{id:'colC',label:'16'}],
+      answer:{row1:'colA', row2:'colB', row3:'colC'} },
+    { type:'number_line_plot', q:'Tap the number line to show 7.', min:0, max:10, step:1, target:7 }
+  ],
+  lesson: '<div class="qp-kicker">Lesson</div><h3 class="qp-lt">Lots of ways to show what you know!</h3><p class="qp-lp">Some questions ask you to tap a picture, fill a table, place a point, shade a shape, or even type a word. Read what the question asks for — then show it!</p><button class="btn btn-primary" onclick="qpNext()">Got it! ✏️</button>',
+  practice: [
+    { type:'fraction_model', q:'Shade 3/8 of the bar.', shape:'bar', parts:8, target:3,
+      hint:'The bottom number (8) is the parts. The top number (3) is how many to shade.' },
+    { type:'text_entry', q:'A shape with three sides is called a…', accept:['triangle','a triangle'],
+      hint:'Tri- means three!' },
+    { type:'hot_text', q:'Tap the TWO words that name quadrilaterals.',
+      parts:['A ', {id:'s1',text:'square',correct:true}, ' rolls past a ', {id:'s2',text:'circle',correct:false}, ' and a ', {id:'s3',text:'rectangle',correct:true}, ' near a ', {id:'s4',text:'triangle',correct:false}, '.'],
+      hint:'Quad- means four — count each shape\'s sides.' }
+  ],
+  game: { type:'smash', intro:'Quick smash!', time:30,
+    problems:[ {q:'8 × 2', c:16, opts:[14,16,18,12]}, {q:'6 × 6', c:36, opts:[30,32,36,42]} ] },
+  post: [
+    { type:'graph_plot', kind:'points', gridMax:10, q:'Place points at (3, 4) and (7, 2).',
+      targets:[{x:3,y:4},{x:7,y:2}] },
+    { type:'fraction_model', q:'Shade 2/4 of the circle.', shape:'circle', parts:4, target:2 },
+    { type:'number_line_plot', q:'Show 5 on the number line.', min:0, max:10, step:1, target:5 }
+  ]
+};
 try{
   const _qp = new URLSearchParams(location.search);
-  const _demo = { dragdrop:['Sorting Showcase', DD_DEMO_QUEST], items:['Item Showcase', ITEMS_DEMO_QUEST] }[_qp.get('demo')];
+  const _demo = { dragdrop:['Sorting Showcase', DD_DEMO_QUEST], items:['Item Showcase', ITEMS_DEMO_QUEST], items2:['Every Answer Type', TAIL_DEMO_QUEST] }[_qp.get('demo')];
   if(_demo){
     window.addEventListener('load', ()=>{
       QUEST_CONTENT[_demo[0]] = _demo[1];

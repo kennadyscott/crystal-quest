@@ -89,13 +89,40 @@ function checkItem(where, it) {
   } else if (type === 'equation_entry') {
     if (!Array.isArray(it.accept) || !it.accept.length) fail('equation_entry has an empty accept list');
   } else if (type === 'graph_plot') {
-    if (it.kind && it.kind !== 'bars') fail(`graph_plot kind "${it.kind}" not supported by the game yet (only 'bars')`);
-    if (!Array.isArray(it.categories) || it.categories.length < 2) fail('graph_plot needs ≥2 categories');
-    const max = it.max || 10;
-    for (const c of it.categories) {
-      if (!c.label) fail('a graph category is missing its label');
-      if (typeof c.target !== 'number' || c.target < 0 || c.target > max) fail(`category "${c.label}" target out of 0..${max}`);
-    }
+    const kind = it.kind || 'bars';
+    if (kind === 'bars') {
+      if (!Array.isArray(it.categories) || it.categories.length < 2) fail('graph_plot bars needs ≥2 categories');
+      const max = it.max || 10;
+      for (const c of it.categories) {
+        if (!c.label) fail('a graph category is missing its label');
+        if (typeof c.target !== 'number' || c.target < 0 || c.target > max) fail(`category "${c.label}" target out of 0..${max}`);
+      }
+    } else if (kind === 'points') {
+      const G = it.gridMax || 10;
+      if (!Array.isArray(it.targets) || !it.targets.length) fail('graph_plot points needs target points');
+      for (const t of it.targets) if (t.x < 0 || t.y < 0 || t.x > G || t.y > G) fail(`point (${t.x},${t.y}) is off the ${G}×${G} grid`);
+    } else fail(`graph_plot kind "${kind}" unknown`);
+  } else if (type === 'hot_spot') {
+    if (!it.figure || !it.figure.svg) fail('hot_spot needs a figure');
+    if (!Array.isArray(it.regions) || it.regions.length < 2) fail('hot_spot needs ≥2 regions');
+    const ids = it.regions.map((r) => r.id);
+    if (!Array.isArray(it.correct) || !it.correct.length || it.correct.some((c) => !ids.includes(c))) fail('hot_spot correct list invalid');
+  } else if (type === 'match_grid') {
+    if (!Array.isArray(it.rows) || it.rows.length < 2 || !Array.isArray(it.cols) || it.cols.length < 2) fail('match_grid needs ≥2 rows and ≥2 columns');
+    const colIds = it.cols.map((c) => c.id);
+    for (const r of it.rows) if (!colIds.includes((it.answer || {})[r.id])) fail(`row "${r.label}" has no valid answer column`);
+  } else if (type === 'number_line_plot') {
+    const min = it.min ?? 0, max = it.max ?? 10;
+    if (typeof it.target !== 'number' || it.target < min || it.target > max) fail('number line target outside min..max');
+  } else if (type === 'text_entry') {
+    if (!Array.isArray(it.accept) || !it.accept.length) fail('text_entry has an empty accept list');
+  } else if (type === 'fraction_model') {
+    if (!['bar', 'circle'].includes(it.shape)) fail('fraction_model shape must be bar or circle');
+    if (!(it.parts >= 2) || !(it.target >= 1) || it.target > it.parts) fail('fraction_model needs 1 ≤ target ≤ parts (parts ≥ 2)');
+  } else if (type === 'hot_text') {
+    const spans = (it.parts || []).filter((x) => typeof x === 'object');
+    if (spans.length < 2) fail('hot_text needs ≥2 tappable spans');
+    if (!spans.some((x) => x.correct)) fail('hot_text has no correct span');
   } else fail(`unknown item type "${type}" — the game cannot render it`);
 }
 for (const [title, q] of Object.entries(pkg.quests)) {
