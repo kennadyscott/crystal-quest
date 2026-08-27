@@ -746,6 +746,25 @@
   .qp-blank.good{border-color:var(--emerald);background:var(--emerald-soft);color:#0d8a56}
   .qp-blank.bad{border-color:#f099bb;background:#ffe3ec;animation:shakeX .3s}
 
+  /* equation-entry keypad */
+  .qp-eq-display{
+    min-height:64px;border:2.5px solid var(--line);border-radius:16px;background:#faf8ff;
+    font-size:32px;font-weight:800;color:var(--crystal-deep);letter-spacing:2px;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;max-width:420px;padding:8px 16px;
+  }
+  .qp-eq-display .eq-ghost{font-size:16px;font-weight:600;color:#a99cc8;letter-spacing:0}
+  .qp-eq-display.good{border-color:var(--emerald);background:var(--emerald-soft);color:#0d8a56}
+  .qp-eq-display.bad{border-color:#f099bb;background:#ffe3ec;animation:shakeX .3s}
+  .qp-keypad{display:grid;grid-template-columns:repeat(4,64px);gap:8px;justify-content:center}
+  .qp-key{
+    height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;
+    font-family:inherit;font-weight:800;font-size:21px;color:var(--ink);cursor:pointer;transition:all .12s;
+  }
+  .qp-key:hover{border-color:var(--crystal-deep);transform:translateY(-1px)}
+  .qp-key:active{transform:translateY(1px)}
+  .qp-key.op{background:var(--crystal-soft);color:var(--crystal-deep)}
+  .qp-key.util{grid-column:span 2;background:#f6f2fc;color:var(--ink-soft);font-size:16px}
+
   /* ============ COLLECTION ============ */
   .col-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:8px}
   .col-item{text-align:center;padding:12px 8px;border-radius:16px;background:#f6f2fc;border:1.5px solid var(--line)}
@@ -1091,12 +1110,12 @@
   <div class="qp-body" id="diagBody"></div>
 </div>
 
-<script src="js/content.js?v=11"></script>
-<script src="js/content-packs.js?v=11"></script>
-<script src="js/state.js?v=11"></script>
-<script src="js/player.js?v=11"></script>
-<script src="js/diag.js?v=11"></script>
-<script src="js/explore.js?v=11"></script>
-<script src="js/world.js?v=11"></script>
+<script src="js/content.js?v=12"></script>
+<script src="js/content-packs.js?v=12"></script>
+<script src="js/state.js?v=12"></script>
+<script src="js/player.js?v=12"></script>
+<script src="js/diag.js?v=12"></script>
+<script src="js/explore.js?v=12"></script>
+<script src="js/world.js?v=12"></script>
 </body>
 </html>

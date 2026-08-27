@@ -152,7 +152,86 @@ function itemCard(kicker, item, showHint){
   if(item && item.type==='drag_drop')  return ddCard(kicker, item);
   if(item && item.type==='multiselect') return msCard(kicker, item);
   if(item && item.type==='dropdown')   return dcCard(kicker, item);
+  if(item && item.type==='equation_entry') return eqCard(kicker, item);
   return qCard(kicker, item, showHint);
+}
+
+/* ---- equation-entry item renderer (STAAR "equation editor") ----
+   { type:'equation_entry', q, accept:['24','4×6=24', …], hint? }
+   Students build the answer on a keypad; grading = normalized match against
+   the accept list, with a numeric fallback so 24 and 24.0 both pass.       */
+const EQ_KEYS = [['7','8','9','÷'],['4','5','6','×'],['1','2','3','−'],['0','.','=','+']];
+function eqNorm(s){
+  return String(s??'').replace(/\s+/g,'').replace(/[*xX]/g,'×').replace(/\//g,'÷').replace(/-/g,'−');
+}
+function eqInitIfNeeded(item){
+  const key = 'eq' + QP.step + ':' + QP.i;
+  if(QP.eqKey === key) return;
+  QP.eqKey = key;
+  QP.eqStr = '';
+}
+function eqCard(kicker, item){
+  eqInitIfNeeded(item);
+  return `<div class="qp-card">
+    <div class="qp-kicker">${kicker}</div>
+    <div class="qp-q">${item.q}</div>
+    <div class="qp-eq-display" id="eqDisplay">${QP.eqStr || '<span class="eq-ghost">Build your answer…</span>'}</div>
+    <div class="qp-keypad">
+      ${EQ_KEYS.map(row => row.map(k =>
+        `<button class="qp-key${/[÷×−+=.]/.test(k)?' op':''}" onclick="qpEQKey('${k}')">${k}</button>`).join('')).join('')}
+      <button class="qp-key util" onclick="qpEQBack()">⌫</button>
+      <button class="qp-key util" onclick="qpEQClear()">Clear</button>
+    </div>
+    <button class="btn btn-primary dd-check" onclick="qpEQCheck()"${QP.eqStr?'':' disabled'}>Check my answer ✓</button>
+    <div id="qpHintBox"></div>
+    ${dots(qList().length, QP.i)}
+  </div>`;
+}
+function qpEQKey(k){
+  if(!QP || QP.busy) return;
+  if(QP.eqStr.length >= 24) return;
+  QP.eqStr += k;
+  sfx('click');
+  renderQP();
+}
+function qpEQBack(){ if(!QP || QP.busy) return; QP.eqStr = QP.eqStr.slice(0,-1); renderQP(); }
+function qpEQClear(){ if(!QP || QP.busy) return; QP.eqStr = ''; renderQP(); }
+function eqMatches(item, input){
+  const inp = eqNorm(input);
+  if((item.accept||[]).some(a => eqNorm(a) === inp)) return true;
+  const n = Number(inp.replace(/−/g,'-'));
+  if(!Number.isNaN(n)){
+    return (item.accept||[]).some(a => {
+      const an = Number(eqNorm(a).replace(/−/g,'-'));
+      return !Number.isNaN(an) && Math.abs(an - n) < 1e-9;
+    });
+  }
+  return false;
+}
+function qpEQCheck(){
+  if(!QP || QP.busy || !QP.eqStr) return;
+  const item = qList()[QP.i];
+  const good = eqMatches(item, QP.eqStr);
+  const disp = $('#eqDisplay');
+  if(disp) disp.classList.add(good?'good':'bad');
+  sfx(good?'correct':'wrong');
+  if(QP.step===2){
+    if(!good){
+      QP.firstTry = false;
+      QP.busy = true;
+      say('Check your equation — try again!');
+      setTimeout(()=>{
+        QP.busy = false;
+        renderQP();
+        const hb = $('#qpHintBox');
+        if(hb) hb.innerHTML = item.hint ? `<div class="qp-hint">💡 ${item.hint}</div>` : `<div class="qp-hint">💡 Use ⌫ to fix it, then check again!</div>`;
+      }, 900);
+      return;
+    }
+    qpPracticeAdvance(document.querySelector('.dd-check'));
+    return;
+  }
+  qpOneShotAdvance(good);
 }
 
 /* ---- multiselect item renderer ----
@@ -670,6 +749,8 @@ const DD_DEMO_QUEST = {
 const ITEMS_DEMO_QUEST = {
   land: 'mult',
   pre: [
+    { type:'equation_entry', q:'There are 4 baskets with 6 apples in each. Type how many apples in all.',
+      accept:['24','4×6=24','6×4=24'] },
     { type:'multiselect', q:'Pick the TWO facts that equal 12.',
       a:['3 × 4','2 × 5','6 × 2','4 × 2'], cs:[0,2] },
     { type:'dropdown', q:'4 × 3 is the same as [b1] groups of [b2].',
@@ -678,6 +759,9 @@ const ITEMS_DEMO_QUEST = {
   ],
   lesson: '<div class="qp-kicker">Lesson</div><h3 class="qp-lt">More than one answer can be right!</h3><p class="qp-lp">Some questions ask you to pick TWO answers, or to finish a sentence by choosing the right words. Read carefully — the question always tells you how many to pick.</p><button class="btn btn-primary" onclick="qpNext()">Got it — let\'s practice! ✏️</button>',
   practice: [
+    { type:'equation_entry', q:'Write a multiplication equation that shows 3 groups of 5 making 15.',
+      accept:['3×5=15','5×3=15','15=3×5','15=5×3'],
+      hint:'Groups × how many in each = total. Try 3 × 5 = 15.' },
     { type:'multiselect', q:'Pick the TWO numbers that are multiples of 4.',
       a:['12','14','20','18'], cs:[0,2],
       hint:'Count by 4s: 4, 8, 12, 16, 20 — which two are on the list?' },
