@@ -100,6 +100,7 @@ function launchQuest(title, opts){
   $('#qpTitle').textContent = title + (review ? ' · Review' : '');
   $('#qpLand').textContent = 'Land of ' + (LANDS[Q.land]||{}).title;
   $('#questPlayer').classList.add('open');
+  $('#questPlayer').setAttribute('data-land', Q.land || 'mult');
   if(typeof syncAvatar==='function') syncAvatar();
   say(pick(review
     ? ["Let's sharpen this!","Review time!","You've got this one."]
@@ -141,8 +142,14 @@ function qList(){
 /* stem figure (inline SVG from the builder's math models) + option bodies
    that may be plain text or {text?, svg?, alt?} — "selectable image" MC. */
 function figHtml(item){
-  return item && item.figure && item.figure.svg
-    ? `<div class="qp-fig" role="img" aria-label="${(item.figure.alt||'').replace(/"/g,'&quot;')}">${item.figure.svg}</div>` : '';
+  let out = '';
+  if(item && item.img){
+    out += `<div class="qp-illus"><img src="${item.img}" alt="${(item.imgAlt||'').replace(/"/g,'&quot;')}"></div>`;
+  }
+  if(item && item.figure && item.figure.svg){
+    out += `<div class="qp-fig" role="img" aria-label="${(item.figure.alt||'').replace(/"/g,'&quot;')}">${item.figure.svg}</div>`;
+  }
+  return out;
 }
 function optBody(o){
   if(o && typeof o === 'object'){
@@ -1135,6 +1142,9 @@ const DD_DEMO_QUEST = {
 const ITEMS_DEMO_QUEST = {
   land: 'mult',
   pre: [
+    { q:'The Data Isle waterfall splashes 3 pools. Each pool holds 5 gems. How many gems in all?',
+      img:'assets/q-demo-island.webp', imgAlt:'A small island with a waterfall and crystals',
+      a:['8','15','35','12'], c:1 },
     { type:'equation_entry', q:'There are 4 baskets with 6 apples in each. Type how many apples in all.',
       accept:['24','4×6=24','6×4=24'] },
     { type:'multiselect', q:'Pick the TWO facts that equal 12.',

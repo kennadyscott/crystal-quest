@@ -11,7 +11,8 @@
 // This is the "merge" half of export-for-review: a human reviews the export,
 // runs this, plays it locally, then commits.
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -124,6 +125,7 @@ function checkItem(where, it) {
     if (!spans.some((x) => x.correct)) fail('hot_text has no correct span');
   } else fail(`unknown item type "${type}" — the game cannot render it`);
   if (it.figure && !it.figure.svg) fail('figure present but has no svg');
+  if (it.img !== undefined && typeof it.img !== 'string') fail('img must be a string (path or data URI)');
 }
 for (const [title, q] of Object.entries(pkg.quests)) {
   try {
@@ -133,6 +135,25 @@ for (const [title, q] of Object.entries(pkg.quests)) {
     });
   } catch (e) { console.error('REFUSED — ' + e.message); process.exit(1); }
 }
+
+// Extract embedded illustrations (data URIs) into real asset files so the
+// pack file stays lean and images cache independently.
+const IMG_DIR = join(ROOT, 'assets', 'q');
+let extracted = 0;
+function extractImg(item) {
+  if (!item || typeof item.img !== 'string' || !item.img.startsWith('data:image/webp;base64,')) return;
+  const buf = Buffer.from(item.img.slice('data:image/webp;base64,'.length), 'base64');
+  const name = createHash('sha256').update(buf).digest('hex').slice(0, 12) + '.webp';
+  mkdirSync(IMG_DIR, { recursive: true });
+  const path = join(IMG_DIR, name);
+  if (!existsSync(path)) writeFileSync(path, buf);
+  item.img = 'assets/q/' + name;
+  extracted++;
+}
+for (const q of Object.values(pkg.quests)) {
+  ['pre', 'practice', 'post'].forEach((step) => (q[step] || []).forEach(extractImg));
+}
+if (extracted) console.log(`Extracted ${extracted} illustration(s) into assets/q/ — commit those files with the pack.`);
 
 const packs = currentPacks();
 const before = Object.keys(packs).length;

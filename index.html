@@ -765,6 +765,34 @@
   .qp-key.op{background:var(--crystal-soft);color:var(--crystal-deep)}
   .qp-key.util{grid-column:span 2;background:#f6f2fc;color:var(--ink-soft);font-size:16px}
 
+  /* ============ QUESTION CARD GLOW-UP ============ */
+  /* land accent palettes */
+  .qplayer[data-land="place"]{--land-a:#4fae4a;--land-b:#8fd66a;--land-wash:#eefae8}
+  .qplayer[data-land="mult"]{--land-a:#8b35f6;--land-b:#c26df6;--land-wash:#f4ecfe}
+  .qplayer[data-land="dec"]{--land-a:#2f9fdc;--land-b:#7ed0f2;--land-wash:#eaf6fd}
+  .qplayer[data-land="frac"]{--land-a:#e88a2f;--land-b:#f6c26d;--land-wash:#fdf3e8}
+  .qplayer[data-land="geo"]{--land-a:#7a5ca8;--land-b:#b39ad6;--land-wash:#f2edf9}
+  .qplayer[data-land="data"]{--land-a:#1ea87a;--land-b:#6fd6ae;--land-wash:#e9faf3}
+  .qp-card{
+    position:relative;overflow:hidden;
+    border-top:6px solid var(--land-a, var(--magenta));
+  }
+  .qp-card::before{
+    content:"";position:absolute;top:-70px;right:-70px;width:190px;height:190px;border-radius:50%;
+    background:radial-gradient(circle, var(--land-wash,#fdf0fa) 0%, transparent 70%);pointer-events:none;
+  }
+  .qp-card::after{
+    content:"✦";position:absolute;top:14px;right:18px;color:var(--land-b,#f3a8d3);font-size:15px;pointer-events:none;
+  }
+  .qp-kicker{color:var(--land-a, var(--crystal)) !important}
+  .qp-dot.on{background:var(--land-a, var(--magenta)) !important}
+  /* scene illustration on a question */
+  .qp-illus{max-width:300px;margin:-4px auto 14px;position:relative}
+  .qp-illus img{width:100%;height:auto;display:block;border-radius:18px;
+    box-shadow:0 12px 30px rgba(40,20,80,.28);border:3px solid #fff}
+  .qp-illus::after{content:"";position:absolute;inset:0;border-radius:18px;
+    box-shadow:inset 0 0 0 1px rgba(139,53,246,.15);pointer-events:none}
+
   /* item figures (inline SVG math models) + selectable-image options */
   .qp-fig{max-width:440px;margin:-6px auto 16px}
   .qp-fig svg{width:100%;height:auto;display:block}
@@ -1193,12 +1221,12 @@
   <div class="qp-body" id="diagBody"></div>
 </div>
 
-<script src="js/content.js?v=15"></script>
-<script src="js/content-packs.js?v=15"></script>
-<script src="js/state.js?v=15"></script>
-<script src="js/player.js?v=15"></script>
-<script src="js/diag.js?v=15"></script>
-<script src="js/explore.js?v=15"></script>
-<script src="js/world.js?v=15"></script>
+<script src="js/content.js?v=18"></script>
+<script src="js/content-packs.js?v=18"></script>
+<script src="js/state.js?v=18"></script>
+<script src="js/player.js?v=18"></script>
+<script src="js/diag.js?v=18"></script>
+<script src="js/explore.js?v=18"></script>
+<script src="js/world.js?v=18"></script>
 </body>
 </html>
